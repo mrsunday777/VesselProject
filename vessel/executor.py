@@ -115,19 +115,15 @@ async def _run_python(payload: dict, timeout: int) -> dict:
 
 async def _run_agent(payload: dict, timeout: int) -> dict:
     """Run a Claude-powered sub-agent that can reason and act."""
+    import urllib.request
+    import json as _json
+
     prompt = payload.get("prompt", "")
     if not prompt:
         return {"status": "error", "error": "No prompt provided"}
 
     if not ANTHROPIC_API_KEY:
         return {"status": "error", "error": "ANTHROPIC_API_KEY not set"}
-
-    try:
-        import anthropic
-    except ImportError:
-        return {"status": "error", "error": "anthropic package not installed. Run: pip install anthropic"}
-
-    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
     system_prompt = (
         "You are a sub-agent running on a phone (Android/Termux). "
@@ -138,21 +134,31 @@ async def _run_agent(payload: dict, timeout: int) -> dict:
     )
 
     try:
-        response = client.messages.create(
-            model=ANTHROPIC_MODEL,
-            max_tokens=2048,
-            system=system_prompt,
-            messages=[{"role": "user", "content": prompt}],
+        body = _json.dumps({
+            "model": ANTHROPIC_MODEL,
+            "max_tokens": 2048,
+            "system": system_prompt,
+            "messages": [{"role": "user", "content": prompt}],
+        }).encode()
+
+        req = urllib.request.Request(
+            "https://api.anthropic.com/v1/messages",
+            data=body,
+            headers={
+                "Content-Type": "application/json",
+                "x-api-key": ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01",
+            },
         )
+
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = _json.loads(resp.read().decode())
 
         return {
             "status": "completed",
-            "response": response.content[0].text[:MAX_TASK_OUTPUT],
+            "response": data["content"][0]["text"][:MAX_TASK_OUTPUT],
             "model": ANTHROPIC_MODEL,
-            "usage": {
-                "input_tokens": response.usage.input_tokens,
-                "output_tokens": response.usage.output_tokens,
-            },
+            "usage": data.get("usage", {}),
         }
     except Exception as e:
         return {"status": "error", "error": str(e)}
