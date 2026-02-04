@@ -1,24 +1,19 @@
-"""
-VesselProject - Shared Configuration
-Communication layer between MsWednesday and phone vessel agents.
-"""
-
 import os
 
-# Server config
-SERVER_HOST = os.getenv("VESSEL_SERVER_HOST", "0.0.0.0")
-SERVER_PORT = int(os.getenv("VESSEL_SERVER_PORT", "8777"))
+SERVER_HOST = "0.0.0.0"
+SERVER_PORT = 8777
+VESSEL_SECRET = "mrsunday"
+VESSEL_ID = "phone-01"
+ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
+MAX_TASK_OUTPUT = 10000
+TASK_TIMEOUT = 300
 
-# Auth - shared secret between server and vessel
-VESSEL_SECRET = os.getenv("VESSEL_SECRET", "change-me-before-deploy")
-
-# Vessel identification
-VESSEL_ID = os.getenv("VESSEL_ID", "phone-01")
-
-# Anthropic API (for sub-agent on the phone)
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
-ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5-20250929")
-
-# Task limits
-MAX_TASK_OUTPUT = 10000  # chars
-TASK_TIMEOUT = 300  # seconds
+# Load API key from secrets file (not tracked by git)
+ANTHROPIC_API_KEY = ""
+try:
+    with open(os.path.join(os.path.dirname(__file__), "secrets.txt")) as f:
+        for line in f:
+            if line.startswith("ANTHROPIC_API_KEY="):
+                ANTHROPIC_API_KEY = line.split("=", 1)[1].strip()
+except FileNotFoundError:
+    pass
