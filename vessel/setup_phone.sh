@@ -50,11 +50,32 @@ if ! grep -q "vessel_env" "$HOME/.bashrc" 2>/dev/null; then
     echo "  Added env loader to .bashrc"
 fi
 
-# Install tmux for background running
+# Install tmux for background running (optional, for manual testing)
 pkg install -y tmux
 
 # Create workspace
 mkdir -p "$HOME/vessel_workspace"
+
+# Install systemd service for auto-start on boot
+echo "[6/6] Installing systemd service..."
+if command -v systemctl &> /dev/null; then
+    # Copy service file to systemd directory
+    SERVICE_FILE="/root/VesselProject/vessel/vessel-listener.service"
+    SYSTEMD_DIR="/etc/systemd/system"
+    
+    if [ -f "$SERVICE_FILE" ]; then
+        cp "$SERVICE_FILE" "$SYSTEMD_DIR/"
+        systemctl daemon-reload
+        systemctl enable vessel-listener.service
+        echo "  ✓ vessel-listener.service installed and enabled"
+        echo "  ✓ Will auto-start on phone reboot"
+    else
+        echo "  ✗ WARNING: vessel-listener.service not found"
+    fi
+else
+    echo "  NOTE: systemd not available in this Termux setup"
+    echo "  Using tmux method instead (see below)"
+fi
 
 echo ""
 echo "=== Setup Complete ==="
@@ -62,12 +83,37 @@ echo ""
 echo "NEXT STEPS:"
 echo "  1. Edit ~/.vessel_env with your actual server IP, secret, and API key"
 echo "  2. Run: source ~/.vessel_env"
-echo "  3. Start the listener: python ~/VesselProject/vessel/listener.py"
 echo ""
-echo "TIP: Use tmux to keep it running when screen is off:"
-echo "  tmux new -s vessel"
-echo "  python ~/VesselProject/vessel/listener.py"
-echo "  (then Ctrl+B, D to detach)"
+echo "LISTENER (receives tasks from MsWednesday):"
 echo ""
-echo "To prevent Android from killing Termux:"
-echo "  termux-wake-lock"
+echo "  OPTION A (Recommended): Systemd Service (auto-starts on reboot)"
+echo "    - Service is now installed and enabled"
+echo "    - Start it: systemctl start vessel-listener"
+echo "    - Check status: systemctl status vessel-listener"
+echo "    - View logs: journalctl -u vessel-listener -f"
+echo ""
+echo "  OPTION B: Manual tmux (for testing)"
+echo "    - tmux new -s vessel 'python ~/VesselProject/vessel/listener.py'"
+echo "    - (Ctrl+B, D to detach)"
+echo ""
+echo "DISPLAY (live P&L dashboard — READ-ONLY, no SSH needed):"
+echo ""
+echo "  tmux new -s display 'python ~/VesselProject/vessel/vessel_display.py'"
+echo ""
+echo "  Options:"
+echo "    --server IP    Server IP (default: 192.168.1.146)"
+echo "    --refresh N    Refresh rate in seconds (default: 0.5)"
+echo ""
+echo "  The display fetches data from the relay server over HTTP."
+echo "  It is strictly read-only — cannot send commands to the Mac."
+echo ""
+echo "PHONE SLEEP SAFETY:"
+echo "  Systemd service runs in background (safe to lock screen)"
+echo "  Auto-restarts on crash (Restart=on-failure)"
+echo "  Auto-starts on phone reboot"
+echo ""
+echo "TROUBLESHOOTING:"
+echo "  - View live logs: journalctl -u vessel-listener -f"
+echo "  - Restart service: systemctl restart vessel-listener"
+echo "  - Stop service: systemctl stop vessel-listener"
+echo "  - Disable auto-start: systemctl disable vessel-listener"

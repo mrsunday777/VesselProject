@@ -7,7 +7,6 @@ import asyncio
 import os
 import sys
 import traceback
-import tempfile
 import time
 
 sys.path.insert(0, "..")

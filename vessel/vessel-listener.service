@@ -1,0 +1,28 @@
+[Unit]
+Description=VesselProject Phone Listener - Remote Task Executor
+Documentation=file:///root/VesselProject/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/VesselProject
+Environment="PATH=/data/data/com.termux/files/usr/bin:/data/data/com.termux/files/usr/sbin"
+Environment="HOME=/root"
+ExecStart=/data/data/com.termux/files/usr/bin/python3 /root/VesselProject/vessel/listener.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=vessel-listener
+
+# Keep service running even if terminal closes
+KillMode=process
+KillSignal=SIGTERM
+
+# Auto-restart on phone reboot
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
