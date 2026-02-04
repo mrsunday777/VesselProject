@@ -6,10 +6,13 @@ ALL communication with the Mac goes through the relay server.
 Agents never call the Mac's internal APIs directly.
 
 Tools:
-    state()           — Get live position state (read-only)
-    sell()            — Exit position via relay → SXAN API
-    notify()          — Send Telegram alert to Brandon via relay
-    check_trigger()   — Check TP/SL against live state
+    state()             — Get live position state (read-only)
+    sell()              — Exit position via relay → SXAN API (multi-agent)
+    notify()            — Send Telegram alert to Brandon via relay
+    telegram_feed()     — Tokens from monitored Telegram chats
+    almost_graduated()  — Tokens approaching graduation
+    new_launches()      — New pump.fun token launches
+    check_trigger()     — Check TP/SL against live state
     exit_if_triggered() — Check + sell in one call
 
 Usage:
@@ -93,7 +96,7 @@ class VesselTools:
             return None
         return result
 
-    def sell(self, token_mint, percent=100, slippage_bps=75):
+    def sell(self, token_mint, percent=100, slippage_bps=75, agent_name="MsWednesday"):
         """
         Exit position via relay → SXAN wallet API.
 
@@ -101,6 +104,7 @@ class VesselTools:
             token_mint: Solana token mint address
             percent: Percentage to sell (1-100)
             slippage_bps: Slippage in basis points (default 75)
+            agent_name: Agent wallet to sell from (default MsWednesday)
 
         Returns:
             {'signature': '...', 'status': 'success'} on success
@@ -110,12 +114,14 @@ class VesselTools:
             'token_mint': token_mint,
             'percent': percent,
             'slippage_bps': slippage_bps,
+            'agent_name': agent_name,
         })
 
         result = self._request('POST', '/execute/sell', {
             'token_mint': token_mint,
             'percent': percent,
             'slippage_bps': slippage_bps,
+            'agent_name': agent_name,
         })
 
         self._log('SELL_RESULT', result)
@@ -137,6 +143,45 @@ class VesselTools:
             'details': details,
             'tx_hash': tx_hash,
         })
+
+    def telegram_feed(self, limit=50):
+        """
+        Get tokens from monitored Telegram chats via relay.
+
+        Args:
+            limit: Max tokens to return (1-200, default 50)
+
+        Returns:
+            List of token dicts or {'status': 'error', ...} on failure.
+        """
+        self._log('FEED_TELEGRAM', {'limit': limit})
+        return self._request('GET', f'/feeds/telegram?limit={limit}')
+
+    def almost_graduated(self, limit=30):
+        """
+        Get tokens approaching graduation via relay.
+
+        Args:
+            limit: Max tokens to return (1-100, default 30)
+
+        Returns:
+            List of token dicts with graduation progress or error dict.
+        """
+        self._log('FEED_GRADUATING', {'limit': limit})
+        return self._request('GET', f'/feeds/graduating?limit={limit}')
+
+    def new_launches(self, limit=30):
+        """
+        Get recently launched pump.fun tokens via relay.
+
+        Args:
+            limit: Max tokens to return (1-100, default 30)
+
+        Returns:
+            List of token dicts or error dict.
+        """
+        self._log('FEED_LAUNCHES', {'limit': limit})
+        return self._request('GET', f'/feeds/launches?limit={limit}')
 
     def check_trigger(self, tp_pct=None, sl_pct=None):
         """

@@ -52,6 +52,12 @@ RELAY_LOG = Path(PROJECT_ROOT) / 'relay_audit.log'
 # Solana address pattern (base58, 32-44 chars)
 SOLANA_ADDR_RE = re.compile(r'^[1-9A-HJ-NP-Za-km-z]{32,44}$')
 
+# Whitelisted agent names (only these agents can trade through the relay)
+AGENT_WHITELIST = {"MsWednesday", "CP0", "CP1", "CP9", "msSunday"}
+
+# MsWednesday wallet (for telegram feed proxy)
+MSWEDNESDAY_WALLET = "J5G2Z5yTgprEiwKEr3NLpKLghAVksez8twitJJwfiYsh"
+
 
 # --- Persistence (SQLite) ---
 
@@ -180,7 +186,7 @@ async def lifespan(app: FastAPI):
     yield
     print("[server] Shutting down")
 
-app = FastAPI(title="VesselProject Relay", lifespan=lifespan)
+app = FastAPI(title="VesselProject Relay", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 
 
 # --- REST endpoints (for MsWednesday to submit tasks) ---
@@ -286,6 +292,7 @@ class SellRequest(BaseModel):
     token_mint: str
     percent: float = 100.0
     slippage_bps: int = 75
+    agent_name: str = "MsWednesday"
 
 
 class NotifyRequest(BaseModel):
@@ -299,40 +306,48 @@ async def relay_sell(req: SellRequest, authorization: str = Header()):
     """
     Proxy sell command to SXAN wallet API.
     Validates input, logs the action, forwards to localhost:5001.
+    Routes to the correct agent wallet based on agent_name.
     """
     if not verify_token(authorization):
         raise HTTPException(status_code=401, detail="Invalid token")
 
+    # Validate agent_name against whitelist
+    if req.agent_name not in AGENT_WHITELIST:
+        relay_log('SELL_REJECTED', {'reason': 'invalid_agent', 'agent_name': req.agent_name[:50]})
+        raise HTTPException(status_code=403, detail=f"Agent '{req.agent_name}' not in whitelist")
+
     # Validate token_mint (Solana base58 address)
     if not SOLANA_ADDR_RE.match(req.token_mint):
-        relay_log('SELL_REJECTED', {'reason': 'invalid_mint', 'mint': req.token_mint[:20]})
+        relay_log('SELL_REJECTED', {'reason': 'invalid_mint', 'agent': req.agent_name, 'mint': req.token_mint[:20]})
         raise HTTPException(status_code=400, detail="Invalid token mint address")
 
     # Validate percent (0-100)
     if not (0 < req.percent <= 100):
-        relay_log('SELL_REJECTED', {'reason': 'invalid_percent', 'percent': req.percent})
+        relay_log('SELL_REJECTED', {'reason': 'invalid_percent', 'agent': req.agent_name, 'percent': req.percent})
         raise HTTPException(status_code=400, detail="Percent must be between 0 and 100")
 
     # Validate slippage (1-500 bps)
     if not (1 <= req.slippage_bps <= 500):
-        relay_log('SELL_REJECTED', {'reason': 'invalid_slippage', 'slippage': req.slippage_bps})
+        relay_log('SELL_REJECTED', {'reason': 'invalid_slippage', 'agent': req.agent_name, 'slippage': req.slippage_bps})
         raise HTTPException(status_code=400, detail="Slippage must be between 1 and 500 bps")
 
     if not AGENT_API_TOKEN:
-        relay_log('SELL_REJECTED', {'reason': 'no_agent_token'})
+        relay_log('SELL_REJECTED', {'reason': 'no_agent_token', 'agent': req.agent_name})
         raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
 
     relay_log('SELL_REQUESTED', {
+        'agent_name': req.agent_name,
         'token_mint': req.token_mint,
         'percent': req.percent,
         'slippage_bps': req.slippage_bps,
     })
 
     # Forward to SXAN API (localhost — relay runs on the Mac)
+    # Route to the correct agent wallet
     try:
         async with httpx.AsyncClient(timeout=30) as client:
             resp = await client.post(
-                f"{SXAN_API_BASE}/api/agent-wallet/sell/MsWednesday",
+                f"{SXAN_API_BASE}/api/agent-wallet/sell/{req.agent_name}",
                 json={
                     'token_mint': req.token_mint,
                     'percent': req.percent,
@@ -344,6 +359,7 @@ async def relay_sell(req: SellRequest, authorization: str = Header()):
         result = resp.json() if resp.status_code == 200 else {'error': resp.text}
 
         relay_log('SELL_RESULT', {
+            'agent_name': req.agent_name,
             'status_code': resp.status_code,
             'signature': result.get('signature', 'none'),
         })
@@ -354,7 +370,7 @@ async def relay_sell(req: SellRequest, authorization: str = Header()):
             return JSONResponse(status_code=resp.status_code, content=result)
 
     except Exception as e:
-        relay_log('SELL_ERROR', {'error': str(e)})
+        relay_log('SELL_ERROR', {'agent_name': req.agent_name, 'error': str(e)})
         return JSONResponse(status_code=502, content={'error': f'SXAN API unreachable: {str(e)}'})
 
 
@@ -389,6 +405,112 @@ async def relay_notify(req: NotifyRequest, authorization: str = Header()):
     except Exception as e:
         relay_log('NOTIFY_ERROR', {'error': str(e)})
         return JSONResponse(status_code=502, content={'error': f'Notification failed: {str(e)}'})
+
+
+# --- Read-only feed proxy endpoints (for vessel agents to access market data) ---
+# All feeds proxy to SXAN dashboard APIs on localhost. Read-only, auth required.
+
+@app.get("/feeds/telegram")
+async def feed_telegram(authorization: str = Header(), limit: int = 50):
+    """
+    Proxy Telegram token feed from SXAN dashboard.
+    Returns tokens extracted from monitored Telegram chats.
+    """
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    if not AGENT_API_TOKEN:
+        raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
+
+    # Clamp limit to sane range
+    limit = max(1, min(limit, 200))
+
+    relay_log('FEED_TELEGRAM', {'limit': limit})
+
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get(
+                f"{SXAN_API_BASE}/api/telegram/feed",
+                params={'wallet': MSWEDNESDAY_WALLET, 'limit': limit},
+                headers={'Authorization': f'Bearer {AGENT_API_TOKEN}'},
+            )
+
+        if resp.status_code == 200:
+            return resp.json()
+        else:
+            return JSONResponse(status_code=resp.status_code, content={'error': resp.text})
+
+    except Exception as e:
+        relay_log('FEED_TELEGRAM_ERROR', {'error': str(e)})
+        return JSONResponse(status_code=502, content={'error': f'SXAN API unreachable: {str(e)}'})
+
+
+@app.get("/feeds/graduating")
+async def feed_graduating(authorization: str = Header(), limit: int = 30):
+    """
+    Proxy almost-graduated tokens feed from SXAN swarm API.
+    Returns tokens approaching graduation with progress %.
+    """
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    if not AGENT_API_TOKEN:
+        raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
+
+    limit = max(1, min(limit, 100))
+
+    relay_log('FEED_GRADUATING', {'limit': limit})
+
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get(
+                f"{SXAN_API_BASE}/api/swarm/graduating",
+                params={'limit': limit},
+                headers={'Authorization': f'Bearer {AGENT_API_TOKEN}'},
+            )
+
+        if resp.status_code == 200:
+            return resp.json()
+        else:
+            return JSONResponse(status_code=resp.status_code, content={'error': resp.text})
+
+    except Exception as e:
+        relay_log('FEED_GRADUATING_ERROR', {'error': str(e)})
+        return JSONResponse(status_code=502, content={'error': f'SXAN API unreachable: {str(e)}'})
+
+
+@app.get("/feeds/launches")
+async def feed_launches(authorization: str = Header(), limit: int = 30):
+    """
+    Proxy new token launches feed from SXAN swarm API.
+    Returns recently launched pump.fun tokens.
+    """
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    if not AGENT_API_TOKEN:
+        raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
+
+    limit = max(1, min(limit, 100))
+
+    relay_log('FEED_LAUNCHES', {'limit': limit})
+
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get(
+                f"{SXAN_API_BASE}/api/swarm/launches",
+                params={'limit': limit},
+                headers={'Authorization': f'Bearer {AGENT_API_TOKEN}'},
+            )
+
+        if resp.status_code == 200:
+            return resp.json()
+        else:
+            return JSONResponse(status_code=resp.status_code, content={'error': resp.text})
+
+    except Exception as e:
+        relay_log('FEED_LAUNCHES_ERROR', {'error': str(e)})
+        return JSONResponse(status_code=502, content={'error': f'SXAN API unreachable: {str(e)}'})
 
 
 # --- WebSocket (for vessel to connect and receive tasks) ---
