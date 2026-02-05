@@ -343,9 +343,12 @@ def render_activity_panel(activity, rows, cols):
         elif 'title' in entry:
             req_tag = f"[{who}] " if who else ''
             detail = f'{req_tag}"{entry["title"][:25]}"'
-        elif 'agent_name' in entry:
-            mint = entry.get('token_mint', '')
+        elif 'agent_name' in entry or ('agent' in entry and not detail):
+            mint = entry.get('token_mint', entry.get('mint', ''))
+            reason = entry.get('reason', '')
             detail = f"{who}"
+            if reason:
+                detail += f" ({reason})"
             if mint:
                 detail += f" {mint[:6]}..{mint[-3:]}"
         elif 'limit' in entry:
