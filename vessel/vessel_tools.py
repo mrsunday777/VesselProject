@@ -252,12 +252,19 @@ class VesselTools:
         for attempt in range(4):
             if attempt > 0:
                 time.sleep(3)
-            transfer_result = self.transfer(token_mint, to_agent, percent=100, from_agent=agent_name)
+            try:
+                transfer_result = self.transfer(token_mint, to_agent, percent=100, from_agent=agent_name)
+            except Exception as e:
+                err_msg = str(e)
+                transfer_result = {'success': False, 'error': err_msg}
+                if 'balance' in err_msg.lower() or 'not found' in err_msg.lower() or '400' in err_msg or '500' in err_msg:
+                    continue
+                break
             if transfer_result.get('success'):
                 break
             err = str(transfer_result.get('error', ''))
             if 'balance' not in err.lower() and 'not found' not in err.lower():
-                break  # Non-balance error, don't retry
+                break
 
         result = {
             'success': transfer_result.get('success', False),
@@ -654,7 +661,14 @@ class VesselTools:
         for attempt in range(4):
             if attempt > 0:
                 time.sleep(3)
-            transfer_result = self.transfer(token_mint, agent_name, percent=100, from_agent=buyer)
+            try:
+                transfer_result = self.transfer(token_mint, agent_name, percent=100, from_agent=buyer)
+            except Exception as e:
+                err_msg = str(e)
+                transfer_result = {'success': False, 'error': err_msg}
+                if 'balance' in err_msg.lower() or 'not found' in err_msg.lower() or '400' in err_msg or '500' in err_msg:
+                    continue
+                break
             if transfer_result.get('success'):
                 break
             err = str(transfer_result.get('error', ''))
