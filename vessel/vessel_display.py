@@ -283,7 +283,7 @@ def render_activity_panel(activity, rows, cols):
                 utc_str = ts.replace('Z', '+00:00')
                 utc_dt = datetime.fromisoformat(utc_str)
                 pst_dt = utc_dt.astimezone(PST)
-                time_str = pst_dt.strftime('%H:%M')
+                time_str = pst_dt.strftime('%I:%M%p').lstrip('0').lower()
         except Exception:
             time_str = '??:??'
 
