@@ -12,6 +12,7 @@ Tools:
     telegram_feed()     — Tokens from monitored Telegram chats
     almost_graduated()  — Tokens approaching graduation
     new_launches()      — New pump.fun token launches
+    catalysts()         — Trending events (Google Trends, News, Reddit)
     check_trigger()     — Check TP/SL against live state
     exit_if_triggered() — Check + sell in one call
 
@@ -182,6 +183,25 @@ class VesselTools:
         """
         self._log('FEED_LAUNCHES', {'limit': limit})
         return self._request('GET', f'/feeds/launches?limit={limit}')
+
+    def catalysts(self, limit=20, min_score=0):
+        """
+        Get trending catalyst events via relay.
+        Google Trends, News RSS, Reddit — scored and keyword-tagged.
+
+        Args:
+            limit: Max events to return (1-50, default 20)
+            min_score: Minimum trend score filter (0-100, default 0)
+
+        Returns:
+            Dict with 'events' list, 'total', 'timestamp', 'status'
+            Each event: {source, category, title, trend_score, keywords, description, url}
+        """
+        self._log('FEED_CATALYSTS', {'limit': limit, 'min_score': min_score})
+        params = f'limit={limit}'
+        if min_score > 0:
+            params += f'&min_score={min_score}'
+        return self._request('GET', f'/feeds/catalysts?{params}')
 
     def check_trigger(self, tp_pct=None, sl_pct=None):
         """
