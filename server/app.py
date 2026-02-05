@@ -551,6 +551,55 @@ async def feed_launches(authorization: str = Header(), limit: int = 30):
         return JSONResponse(status_code=502, content={'error': f'SXAN API unreachable: {str(e)}'})
 
 
+# Catalyst state file (written by vessel_catalyst_aggregator on this machine)
+CATALYST_STATE_FILE = Path.home() / 'catalyst_events.json'
+
+
+@app.get("/feeds/catalysts")
+async def feed_catalysts(authorization: str = Header(), limit: int = 20, min_score: float = 0):
+    """
+    Serve catalyst events from local state file.
+    Written by vessel_catalyst_aggregator.py, read here directly (same machine).
+    Returns trending events from Google Trends, News RSS, Reddit.
+    """
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    limit = max(1, min(limit, 50))
+    min_score = max(0, min(min_score, 100))
+
+    relay_log('FEED_CATALYSTS', {'limit': limit, 'min_score': min_score})
+
+    if not CATALYST_STATE_FILE.exists():
+        return JSONResponse(content={
+            'events': [],
+            'total': 0,
+            'timestamp': None,
+            'status': 'no_data',
+        })
+
+    try:
+        with open(CATALYST_STATE_FILE) as f:
+            data = json.load(f)
+
+        events = data.get('events', [])
+        if min_score > 0:
+            events = [e for e in events if e.get('trend_score', 0) >= min_score]
+
+        return {
+            'events': events[:limit],
+            'total': len(events),
+            'timestamp': data.get('timestamp'),
+            'status': 'ok',
+        }
+    except (json.JSONDecodeError, IOError) as e:
+        relay_log('FEED_CATALYSTS_ERROR', {'error': str(e)})
+        return JSONResponse(
+            status_code=500,
+            content={'error': f'Catalyst state read error: {str(e)}'}
+        )
+
+
 # --- WebSocket (for vessel to connect and receive tasks) ---
 
 @app.websocket("/ws/{vessel_id}")

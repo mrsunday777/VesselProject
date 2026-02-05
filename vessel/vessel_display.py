@@ -420,6 +420,10 @@ def run_display(server_ip, refresh):
                         a = pos.get('agent', '')
                         if a and a != 'unassigned':
                             active_agents.add(a)
+
+                    # Mark spawned agents (process-based detection from monitor)
+                    for a in state.get('spawned_agents', []):
+                        active_agents.add(a)
                 else:
                     fetch_errors += 1
 
