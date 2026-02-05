@@ -59,6 +59,7 @@ if not USE_URLLIB and not USE_REQUESTS:
 
 class Term:
     CLEAR = '\033[2J\033[H'
+    ERASE_EOL = '\033[K'
     HIDE_CURSOR = '\033[?25l'
     SHOW_CURSOR = '\033[?25h'
     RESET = '\033[0m'
@@ -99,7 +100,7 @@ class Agent:
         self.symbol = symbol
         self.color = color
         self.x = random.randint(4, max(5, max_w - 10))
-        self.y = random.randint(4, max(5, max_h - 8))
+        self.y = random.randint(4, max(5, max_h - 1))
         self.vx = random.uniform(-1.5, 1.5)
         self.vy = random.uniform(-0.8, 0.8)
         if abs(self.vx) < 0.3:
@@ -117,11 +118,11 @@ class Agent:
 
         if self.x <= 2 or self.x >= self.max_w - len(self.name) - 3:
             self.vx *= -1
-        if self.y <= 2 or self.y >= self.max_h - 8:
+        if self.y <= 4 or self.y >= self.max_h - 1:
             self.vy *= -1
 
         self.x = max(2, min(self.max_w - len(self.name) - 3, self.x))
-        self.y = max(2, min(self.max_h - 8, self.y))
+        self.y = max(4, min(self.max_h - 1, self.y))
         self.glow = max(0, self.glow - 1)
 
     def render(self):
@@ -152,6 +153,26 @@ def fetch_position_state(server_url, secret):
         return None
 
 
+def fetch_activity(server_url, secret, limit=5):
+    """Fetch recent agent activity from relay audit log. READ-ONLY."""
+    url = f"{server_url}/activity?limit={limit}"
+
+    try:
+        if USE_URLLIB:
+            req = Request(url, headers={'Authorization': secret})
+            resp = urlopen(req, timeout=5)
+            if resp.status == 200:
+                return json.loads(resp.read().decode())
+            return []
+        elif USE_REQUESTS:
+            resp = req_lib.get(url, headers={'Authorization': secret}, timeout=5)
+            if resp.status_code == 200:
+                return resp.json()
+            return []
+    except Exception:
+        return []
+
+
 # --- Renderer ---
 
 def pnl_color(value):
@@ -160,6 +181,98 @@ def pnl_color(value):
     elif value < 0:
         return Term.BRIGHT_RED
     return Term.DIM
+
+
+def activity_color(action):
+    """Color-code activity entries by type."""
+    action = action.upper()
+    if 'SELL' in action:
+        return Term.YELLOW
+    if 'NOTIFY' in action:
+        return Term.BRIGHT_CYAN
+    if 'ERROR' in action or 'REJECTED' in action:
+        return Term.BRIGHT_RED
+    # feeds and everything else
+    return Term.DIM
+
+
+# Friendly labels for audit log actions
+ACTION_LABELS = {
+    'SELL_REQUESTED': 'SELL',
+    'SELL_RESULT': None,       # skip
+    'SELL_ERROR': 'SELL ERR',
+    'SELL_REJECTED': 'SELL DENIED',
+    'NOTIFY_REQUESTED': 'NOTIFY',
+    'NOTIFY_RESULT': None,     # skip
+    'NOTIFY_ERROR': 'NOTIFY ERR',
+    'FEED_TELEGRAM': 'SCAN TG',
+    'FEED_TELEGRAM_ERROR': None,
+    'FEED_GRADUATING': 'SCAN GRAD',
+    'FEED_GRADUATING_ERROR': None,
+    'FEED_LAUNCHES': 'SCAN LAUNCH',
+    'FEED_LAUNCHES_ERROR': None,
+}
+
+
+def render_activity_panel(activity, rows, cols):
+    """Render the agent activity ticker section."""
+    lines = []
+    col_start = 2
+    row = 4  # Right below header (3 lines of header)
+
+    lines.append(f"{Term.pos(row, col_start)}{Term.BOLD}{Term.CYAN}AGENT ACTIVITY{Term.RESET}")
+    row += 1
+
+    if not activity:
+        lines.append(f"{Term.pos(row, col_start)}{Term.DIM}No recent activity{Term.RESET}")
+        return ''.join(lines)
+
+    # Filter out _RESULT noise, keep meaningful actions
+    filtered = []
+    for entry in activity:
+        action = entry.get('action', '')
+        label = ACTION_LABELS.get(action, action[:16])
+        if label is None:
+            continue  # skip result/error follow-ups
+        filtered.append((entry, label))
+
+    if not filtered:
+        lines.append(f"{Term.pos(row, col_start)}{Term.DIM}No recent activity{Term.RESET}")
+        return ''.join(lines)
+
+    for entry, label in filtered[-5:]:
+        ts = entry.get('timestamp', '')
+        action = entry.get('action', '?')
+        # Parse time — convert UTC to local, show HH:MM
+        time_str = ''
+        try:
+            if 'T' in ts:
+                utc_str = ts.replace('Z', '+00:00')
+                utc_dt = datetime.fromisoformat(utc_str)
+                local_dt = utc_dt.astimezone()
+                time_str = local_dt.strftime('%H:%M')
+        except Exception:
+            time_str = '??:??'
+
+        # Build detail snippet based on action type
+        detail = ''
+        if 'title' in entry:
+            detail = f'"{entry["title"][:25]}"'
+        elif 'agent_name' in entry:
+            mint = entry.get('token_mint', '')
+            detail = f"{entry['agent_name']}"
+            if mint:
+                detail += f" {mint[:6]}..{mint[-3:]}"
+        elif 'limit' in entry:
+            detail = f"({entry['limit']} tokens)"
+
+        ac = activity_color(action)
+        label_fmt = label[:12].ljust(12)
+        line = f"{Term.pos(row, col_start)} {Term.DIM}{time_str}{Term.RESET}  {ac}{label_fmt}{Term.RESET} {Term.DIM}{detail}{Term.RESET}{Term.ERASE_EOL}"
+        lines.append(line)
+        row += 1
+
+    return ''.join(lines)
 
 
 def render_data_panel(state, rows, cols):
@@ -239,15 +352,13 @@ def render_data_panel(state, rows, cols):
     realized = state.get('realized_sol', 0)
     lines.append(f"{Term.pos(row, 1)}{sep}")
     row += 1
-    lines.append(f"{Term.pos(row, col_start)}{Term.BOLD}TOTAL:{Term.RESET} ${total:.2f} USD")
-
+    # Combine TOTAL + Realized + Freshness on one line (24-row terminal is tight)
+    total_line = f"{Term.pos(row, col_start)}{Term.BOLD}TOTAL:{Term.RESET} ${total:.2f}"
     if realized != 0:
         r_usd = realized * sol_price
         rc = pnl_color(r_usd)
-        lines.append(f"  {Term.BOLD}Realized:{Term.RESET} {rc}${r_usd:+.2f}{Term.RESET}")
-    row += 1
+        total_line += f"  {Term.BOLD}R:{Term.RESET}{rc}${r_usd:+.2f}{Term.RESET}"
 
-    # Freshness
     source_ts = state.get('source_timestamp', '')
     calc = state.get('calculator_used', False)
     if source_ts:
@@ -255,12 +366,14 @@ def render_data_panel(state, rows, cols):
             src_time = datetime.fromisoformat(str(source_ts))
             age = (datetime.now() - src_time).total_seconds()
             if age > 120:
-                lines.append(f"{Term.pos(row, col_start)}{Term.RED}STALE: {int(age)}s{Term.RESET}")
+                total_line += f"  {Term.RED}{int(age)}s STALE{Term.RESET}"
             else:
-                lines.append(f"{Term.pos(row, col_start)}{Term.DIM}{int(age)}s ago  "
-                             f"[{'calc' if calc else 'raw'}]{Term.RESET}")
+                total_line += f"  {Term.DIM}{int(age)}s [{'calc' if calc else 'raw'}]{Term.RESET}"
         except (ValueError, TypeError):
             pass
+
+    total_line += Term.ERASE_EOL
+    lines.append(total_line)
 
     return ''.join(lines)
 
@@ -281,6 +394,7 @@ def run_display(server_ip, refresh):
     }
 
     state = None
+    activity = []
     last_fetch = 0
     fetch_interval = max(3.0, refresh)  # Don't hammer the server
     frame = 0
@@ -295,23 +409,40 @@ def run_display(server_ip, refresh):
             now = time.time()
             if now - last_fetch >= fetch_interval:
                 new_state = fetch_position_state(server_url, VESSEL_SECRET)
+                active_agents = set()
+
                 if new_state:
                     state = new_state
                     fetch_errors = 0
 
-                    # Mark active agents
-                    active_agents = set()
+                    # Mark active agents from positions
                     for pos in state.get('positions', []):
                         a = pos.get('agent', '')
                         if a and a != 'unassigned':
                             active_agents.add(a)
-
-                    for name, agent in agents.items():
-                        agent.active = name in active_agents
-                        if agent.active:
-                            agent.glow = 5
                 else:
                     fetch_errors += 1
+
+                # Fetch activity on same interval (no extra request spam)
+                activity = fetch_activity(server_url, VESSEL_SECRET, limit=15)
+
+                # Also mark agents active from recent relay activity
+                agent_names = set(agents.keys())
+                for entry in activity:
+                    # Check explicit agent_name field (sells)
+                    a = entry.get('agent_name', '')
+                    if a in agent_names:
+                        active_agents.add(a)
+                    # Check title field for agent names (notifications)
+                    title = entry.get('title', '')
+                    for name in agent_names:
+                        if name in title:
+                            active_agents.add(name)
+
+                for name, agent in agents.items():
+                    agent.active = name in active_agents
+                    if agent.active:
+                        agent.glow = 5
 
                 last_fetch = now
 
@@ -331,7 +462,10 @@ def run_display(server_ip, refresh):
             output += f"  {Term.DIM}|{Term.RESET}  {datetime.now().strftime('%H:%M:%S')}\n"
             output += f"{Term.BOLD}{Term.WHITE}{'=' * cols}{Term.RESET}"
 
-            # Agents (bouncing in upper area)
+            # Activity section (below header, above data)
+            output += render_activity_panel(activity, rows, cols)
+
+            # Agents (bouncing across full screen)
             for agent in agents.values():
                 output += agent.render()
 

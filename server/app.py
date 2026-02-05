@@ -392,11 +392,16 @@ async def relay_notify(req: NotifyRequest, authorization: str = Header()):
     if req.tx_hash:
         message += f"\n\nTX: {req.tx_hash[:88]}"
 
+    if not AGENT_API_TOKEN:
+        relay_log('NOTIFY_REJECTED', {'reason': 'no_agent_token'})
+        return JSONResponse(status_code=500, content={'error': 'AGENT_API_TOKEN not configured on relay'})
+
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             resp = await client.post(
                 f"{SXAN_API_BASE}/api/notify",
                 json={'user_id': '6265463172', 'message': message},
+                headers={'Authorization': f'Bearer {AGENT_API_TOKEN}'},
             )
 
         relay_log('NOTIFY_RESULT', {'status_code': resp.status_code})
@@ -477,6 +482,39 @@ async def feed_graduating(authorization: str = Header(), limit: int = 30):
     except Exception as e:
         relay_log('FEED_GRADUATING_ERROR', {'error': str(e)})
         return JSONResponse(status_code=502, content={'error': f'SXAN API unreachable: {str(e)}'})
+
+
+@app.get("/activity")
+async def get_activity(authorization: str = Header(), limit: int = 5):
+    """
+    Return recent relay audit log entries.
+    Tails relay_audit.log and returns last N parsed JSON lines.
+    """
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    limit = max(1, min(limit, 50))
+
+    if not RELAY_LOG.exists():
+        return []
+
+    try:
+        with open(RELAY_LOG, 'r') as f:
+            all_lines = f.readlines()
+
+        entries = []
+        for line in all_lines[-(limit * 2):]:  # read extra in case some fail to parse
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entries.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+
+        return entries[-limit:]
+    except IOError:
+        return []
 
 
 @app.get("/feeds/launches")
