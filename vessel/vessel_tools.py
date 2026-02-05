@@ -59,15 +59,18 @@ DEFAULT_SERVER_IP = os.getenv('VESSEL_SERVER_IP', '192.168.1.146')
 class VesselTools:
     """Agent toolkit — all operations routed through relay server."""
 
-    def __init__(self, server_ip=None):
+    def __init__(self, server_ip=None, name=None):
         self.relay_url = f"http://{server_ip or DEFAULT_SERVER_IP}:{SERVER_PORT}"
         self.secret = VESSEL_SECRET
+        self.name = name  # Agent identity — sent as X-Requester for audit attribution
         self.log_file = os.path.expanduser('~/vessel_agent.log')
 
     def _request(self, method, path, body=None):
         """Make HTTP request to relay server."""
         url = f"{self.relay_url}{path}"
         headers = {'Authorization': self.secret}
+        if self.name:
+            headers['X-Requester'] = self.name
 
         if body is not None:
             data = json.dumps(body).encode()
@@ -332,11 +335,11 @@ class VesselTools:
 
 _tools = None
 
-def get_tools(server_ip=None):
+def get_tools(server_ip=None, name=None):
     """Get or create VesselTools singleton."""
     global _tools
     if _tools is None:
-        _tools = VesselTools(server_ip=server_ip)
+        _tools = VesselTools(server_ip=server_ip, name=name)
     return _tools
 
 

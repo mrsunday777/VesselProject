@@ -19,6 +19,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Head
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional
+from fastapi import Request
 
 import httpx
 
@@ -159,6 +160,14 @@ class TaskResponse(BaseModel):
 
 def verify_token(token: str) -> bool:
     return hashlib.sha256(token.encode()).hexdigest() == hashlib.sha256(VESSEL_SECRET.encode()).hexdigest()
+
+
+def get_requester(request: Request) -> Optional[str]:
+    """Extract requester identity from X-Requester header. Validated against whitelist."""
+    val = request.headers.get('x-requester', '')
+    if val and val in AGENT_WHITELIST:
+        return val
+    return None
 
 
 def relay_log(action: str, details: dict):
@@ -309,7 +318,7 @@ class NotifyRequest(BaseModel):
 
 
 @app.post("/execute/sell")
-async def relay_sell(req: SellRequest, authorization: str = Header()):
+async def relay_sell(req: SellRequest, request: Request, authorization: str = Header()):
     """
     Proxy sell command to SXAN wallet API.
     Validates input, logs the action, forwards to localhost:5001.
@@ -317,6 +326,8 @@ async def relay_sell(req: SellRequest, authorization: str = Header()):
     """
     if not verify_token(authorization):
         raise HTTPException(status_code=401, detail="Invalid token")
+
+    requester = get_requester(request)
 
     # Validate agent_name against whitelist
     if req.agent_name not in AGENT_WHITELIST:
@@ -344,6 +355,7 @@ async def relay_sell(req: SellRequest, authorization: str = Header()):
 
     relay_log('SELL_REQUESTED', {
         'agent_name': req.agent_name,
+        'requester': requester or req.agent_name,
         'token_mint': req.token_mint,
         'percent': req.percent,
         'slippage_bps': req.slippage_bps,
@@ -382,7 +394,7 @@ async def relay_sell(req: SellRequest, authorization: str = Header()):
 
 
 @app.post("/execute/buy")
-async def relay_buy(req: BuyRequest, authorization: str = Header()):
+async def relay_buy(req: BuyRequest, request: Request, authorization: str = Header()):
     """
     Proxy buy command to SXAN wallet API.
     Validates input, logs the action, forwards to localhost:5001.
@@ -390,6 +402,8 @@ async def relay_buy(req: BuyRequest, authorization: str = Header()):
     """
     if not verify_token(authorization):
         raise HTTPException(status_code=401, detail="Invalid token")
+
+    requester = get_requester(request)
 
     # Validate agent_name against whitelist
     if req.agent_name not in AGENT_WHITELIST:
@@ -417,6 +431,7 @@ async def relay_buy(req: BuyRequest, authorization: str = Header()):
 
     relay_log('BUY_REQUESTED', {
         'agent_name': req.agent_name,
+        'requester': requester or req.agent_name,
         'token_mint': req.token_mint,
         'amount_sol': req.amount_sol,
         'slippage_bps': req.slippage_bps,
@@ -454,13 +469,15 @@ async def relay_buy(req: BuyRequest, authorization: str = Header()):
 
 
 @app.get("/wallet-status/{agent_name}")
-async def relay_wallet_status(agent_name: str, authorization: str = Header()):
+async def relay_wallet_status(agent_name: str, request: Request, authorization: str = Header()):
     """
     Proxy wallet status request to SXAN wallet API.
     Returns pubkey, sol_balance, tokens, enabled status.
     """
     if not verify_token(authorization):
         raise HTTPException(status_code=401, detail="Invalid token")
+
+    requester = get_requester(request)
 
     if agent_name not in AGENT_WHITELIST:
         relay_log('WALLET_STATUS_REJECTED', {'reason': 'invalid_agent', 'agent_name': agent_name[:50]})
@@ -469,7 +486,7 @@ async def relay_wallet_status(agent_name: str, authorization: str = Header()):
     if not AGENT_API_TOKEN:
         raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
 
-    relay_log('WALLET_STATUS', {'agent_name': agent_name})
+    relay_log('WALLET_STATUS', {'agent_name': agent_name, 'requester': requester or agent_name})
 
     try:
         async with httpx.AsyncClient(timeout=15) as client:
@@ -489,13 +506,15 @@ async def relay_wallet_status(agent_name: str, authorization: str = Header()):
 
 
 @app.get("/transactions/{agent_name}")
-async def relay_transactions(agent_name: str, authorization: str = Header(), limit: int = 20):
+async def relay_transactions(agent_name: str, request: Request, authorization: str = Header(), limit: int = 20):
     """
     Proxy transaction history request to SXAN wallet API.
     Returns recent trades for the specified agent.
     """
     if not verify_token(authorization):
         raise HTTPException(status_code=401, detail="Invalid token")
+
+    requester = get_requester(request)
 
     if agent_name not in AGENT_WHITELIST:
         relay_log('TRANSACTIONS_REJECTED', {'reason': 'invalid_agent', 'agent_name': agent_name[:50]})
@@ -506,7 +525,7 @@ async def relay_transactions(agent_name: str, authorization: str = Header(), lim
 
     limit = max(1, min(limit, 100))
 
-    relay_log('TRANSACTIONS', {'agent_name': agent_name, 'limit': limit})
+    relay_log('TRANSACTIONS', {'agent_name': agent_name, 'requester': requester or agent_name, 'limit': limit})
 
     try:
         async with httpx.AsyncClient(timeout=15) as client:
@@ -527,7 +546,7 @@ async def relay_transactions(agent_name: str, authorization: str = Header(), lim
 
 
 @app.get("/positions/{agent_name}")
-async def relay_positions(agent_name: str, authorization: str = Header()):
+async def relay_positions(agent_name: str, request: Request, authorization: str = Header()):
     """
     Return positions filtered for a specific agent from position_state.json.
     Reads from local file (same machine), no proxy needed.
@@ -535,11 +554,13 @@ async def relay_positions(agent_name: str, authorization: str = Header()):
     if not verify_token(authorization):
         raise HTTPException(status_code=401, detail="Invalid token")
 
+    requester = get_requester(request)
+
     if agent_name not in AGENT_WHITELIST:
         relay_log('POSITIONS_REJECTED', {'reason': 'invalid_agent', 'agent_name': agent_name[:50]})
         raise HTTPException(status_code=403, detail=f"Agent '{agent_name}' not in whitelist")
 
-    relay_log('POSITIONS', {'agent_name': agent_name})
+    relay_log('POSITIONS', {'agent_name': agent_name, 'requester': requester or agent_name})
 
     if not POSITION_STATE_FILE.exists():
         return JSONResponse(content={
@@ -572,18 +593,20 @@ async def relay_positions(agent_name: str, authorization: str = Header()):
 
 
 @app.post("/notify")
-async def relay_notify(req: NotifyRequest, authorization: str = Header()):
+async def relay_notify(req: NotifyRequest, request: Request, authorization: str = Header()):
     """
     Proxy notification to SXAN dashboard (Telegram alert to Brandon).
     """
     if not verify_token(authorization):
         raise HTTPException(status_code=401, detail="Invalid token")
 
+    requester = get_requester(request)
+
     # Sanitize: limit lengths
     title = req.title[:100]
     details = req.details[:500]
 
-    relay_log('NOTIFY_REQUESTED', {'title': title})
+    relay_log('NOTIFY_REQUESTED', {'title': title, 'requester': requester})
 
     message = f"**{title}**\n\n{details}"
     if req.tx_hash:
@@ -613,7 +636,7 @@ async def relay_notify(req: NotifyRequest, authorization: str = Header()):
 # All feeds proxy to SXAN dashboard APIs on localhost. Read-only, auth required.
 
 @app.get("/feeds/telegram")
-async def feed_telegram(authorization: str = Header(), limit: int = 50):
+async def feed_telegram(request: Request, authorization: str = Header(), limit: int = 50):
     """
     Proxy Telegram token feed from SXAN dashboard.
     Returns tokens extracted from monitored Telegram chats.
@@ -621,13 +644,15 @@ async def feed_telegram(authorization: str = Header(), limit: int = 50):
     if not verify_token(authorization):
         raise HTTPException(status_code=401, detail="Invalid token")
 
+    requester = get_requester(request)
+
     if not AGENT_API_TOKEN:
         raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
 
     # Clamp limit to sane range
     limit = max(1, min(limit, 200))
 
-    relay_log('FEED_TELEGRAM', {'limit': limit})
+    relay_log('FEED_TELEGRAM', {'limit': limit, 'requester': requester})
 
     try:
         async with httpx.AsyncClient(timeout=15) as client:
@@ -648,7 +673,7 @@ async def feed_telegram(authorization: str = Header(), limit: int = 50):
 
 
 @app.get("/feeds/graduating")
-async def feed_graduating(authorization: str = Header(), limit: int = 30):
+async def feed_graduating(request: Request, authorization: str = Header(), limit: int = 30):
     """
     Proxy almost-graduated tokens feed from SXAN swarm API.
     Returns tokens approaching graduation with progress %.
@@ -656,12 +681,14 @@ async def feed_graduating(authorization: str = Header(), limit: int = 30):
     if not verify_token(authorization):
         raise HTTPException(status_code=401, detail="Invalid token")
 
+    requester = get_requester(request)
+
     if not AGENT_API_TOKEN:
         raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
 
     limit = max(1, min(limit, 100))
 
-    relay_log('FEED_GRADUATING', {'limit': limit})
+    relay_log('FEED_GRADUATING', {'limit': limit, 'requester': requester})
 
     try:
         async with httpx.AsyncClient(timeout=15) as client:
@@ -715,7 +742,7 @@ async def get_activity(authorization: str = Header(), limit: int = 5):
 
 
 @app.get("/feeds/launches")
-async def feed_launches(authorization: str = Header(), limit: int = 30):
+async def feed_launches(request: Request, authorization: str = Header(), limit: int = 30):
     """
     Proxy new token launches feed from SXAN swarm API.
     Returns recently launched pump.fun tokens.
@@ -723,12 +750,14 @@ async def feed_launches(authorization: str = Header(), limit: int = 30):
     if not verify_token(authorization):
         raise HTTPException(status_code=401, detail="Invalid token")
 
+    requester = get_requester(request)
+
     if not AGENT_API_TOKEN:
         raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
 
     limit = max(1, min(limit, 100))
 
-    relay_log('FEED_LAUNCHES', {'limit': limit})
+    relay_log('FEED_LAUNCHES', {'limit': limit, 'requester': requester})
 
     try:
         async with httpx.AsyncClient(timeout=15) as client:
@@ -753,7 +782,7 @@ CATALYST_STATE_FILE = Path.home() / 'catalyst_events.json'
 
 
 @app.get("/feeds/catalysts")
-async def feed_catalysts(authorization: str = Header(), limit: int = 20, min_score: float = 0):
+async def feed_catalysts(request: Request, authorization: str = Header(), limit: int = 20, min_score: float = 0):
     """
     Serve catalyst events from local state file.
     Written by vessel_catalyst_aggregator.py, read here directly (same machine).
@@ -762,10 +791,12 @@ async def feed_catalysts(authorization: str = Header(), limit: int = 20, min_sco
     if not verify_token(authorization):
         raise HTTPException(status_code=401, detail="Invalid token")
 
+    requester = get_requester(request)
+
     limit = max(1, min(limit, 50))
     min_score = max(0, min(min_score, 100))
 
-    relay_log('FEED_CATALYSTS', {'limit': limit, 'min_score': min_score})
+    relay_log('FEED_CATALYSTS', {'limit': limit, 'min_score': min_score, 'requester': requester})
 
     if not CATALYST_STATE_FILE.exists():
         return JSONResponse(content={

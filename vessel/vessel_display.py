@@ -111,6 +111,7 @@ class Agent:
         self.max_h = max_h
         self.glow = 0
         self.active = False
+        self.last_seen = 0  # timestamp of last detected activity
 
     def update(self):
         self.x += self.vx
@@ -186,22 +187,39 @@ def pnl_color(value):
 def activity_color(action):
     """Color-code activity entries by type."""
     action = action.upper()
+    if 'BUY' in action:
+        return Term.BRIGHT_GREEN
     if 'SELL' in action:
         return Term.YELLOW
     if 'NOTIFY' in action:
         return Term.BRIGHT_CYAN
     if 'ERROR' in action or 'REJECTED' in action:
         return Term.BRIGHT_RED
+    if 'WALLET_STATUS' in action or 'TRANSACTIONS' in action or 'POSITIONS' in action:
+        return Term.DIM
     # feeds and everything else
     return Term.DIM
 
 
 # Friendly labels for audit log actions
 ACTION_LABELS = {
+    'BUY_REQUESTED': 'BUY',
+    'BUY_RESULT': None,        # skip
+    'BUY_ERROR': 'BUY ERR',
+    'BUY_REJECTED': 'BUY DENIED',
     'SELL_REQUESTED': 'SELL',
     'SELL_RESULT': None,       # skip
     'SELL_ERROR': 'SELL ERR',
     'SELL_REJECTED': 'SELL DENIED',
+    'WALLET_STATUS': 'STATUS',
+    'WALLET_STATUS_ERROR': None,
+    'WALLET_STATUS_REJECTED': None,
+    'TRANSACTIONS': 'TX HIST',
+    'TRANSACTIONS_ERROR': None,
+    'TRANSACTIONS_REJECTED': None,
+    'POSITIONS': 'POSITIONS',
+    'POSITIONS_ERROR': None,
+    'POSITIONS_REJECTED': None,
     'NOTIFY_REQUESTED': 'NOTIFY',
     'NOTIFY_RESULT': None,     # skip
     'NOTIFY_ERROR': 'NOTIFY ERR',
@@ -211,6 +229,8 @@ ACTION_LABELS = {
     'FEED_GRADUATING_ERROR': None,
     'FEED_LAUNCHES': 'SCAN LAUNCH',
     'FEED_LAUNCHES_ERROR': None,
+    'FEED_CATALYSTS': 'SCAN CAT',
+    'FEED_CATALYSTS_ERROR': None,
 }
 
 
@@ -255,16 +275,20 @@ def render_activity_panel(activity, rows, cols):
             time_str = '??:??'
 
         # Build detail snippet based on action type
+        # Use 'requester' for WHO did it, 'agent_name' for WHICH wallet
+        who = entry.get('requester') or entry.get('agent_name', '')
         detail = ''
         if 'title' in entry:
-            detail = f'"{entry["title"][:25]}"'
+            req_tag = f"[{who}] " if who else ''
+            detail = f'{req_tag}"{entry["title"][:25]}"'
         elif 'agent_name' in entry:
             mint = entry.get('token_mint', '')
-            detail = f"{entry['agent_name']}"
+            detail = f"{who}"
             if mint:
                 detail += f" {mint[:6]}..{mint[-3:]}"
         elif 'limit' in entry:
-            detail = f"({entry['limit']} tokens)"
+            req_tag = f"[{who}] " if who else ''
+            detail = f"{req_tag}({entry['limit']} tokens)"
 
         ac = activity_color(action)
         label_fmt = label[:12].ljust(12)
@@ -431,10 +455,11 @@ def run_display(server_ip, refresh):
                 activity = fetch_activity(server_url, VESSEL_SECRET, limit=15)
 
                 # Also mark agents active from recent relay activity
+                # Use 'requester' field (who made the call) over 'agent_name' (which wallet)
                 agent_names = set(agents.keys())
                 for entry in activity:
-                    # Check explicit agent_name field (sells)
-                    a = entry.get('agent_name', '')
+                    # Prefer requester (who made the request) for attribution
+                    a = entry.get('requester') or entry.get('agent_name', '')
                     if a in agent_names:
                         active_agents.add(a)
                     # Check title field for agent names (notifications)
@@ -444,9 +469,11 @@ def run_display(server_ip, refresh):
                             active_agents.add(name)
 
                 for name, agent in agents.items():
-                    agent.active = name in active_agents
-                    if agent.active:
+                    if name in active_agents:
+                        agent.last_seen = now
                         agent.glow = 5
+                    # Stay active for 90s after last seen (covers gaps between monitoring cycles)
+                    agent.active = (now - agent.last_seen) < 90
 
                 last_fetch = now
 
