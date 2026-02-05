@@ -26,7 +26,7 @@ import json
 import math
 import random
 import argparse
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 # Try to load config, fall back to env vars / defaults
 try:
@@ -275,14 +275,15 @@ def render_activity_panel(activity, rows, cols):
     for entry, label in filtered[-5:]:
         ts = entry.get('timestamp', '')
         action = entry.get('action', '?')
-        # Parse time — convert UTC to local, show HH:MM
+        # Parse time — convert UTC to PST, show HH:MM
+        PST = timezone(timedelta(hours=-8))
         time_str = ''
         try:
             if 'T' in ts:
                 utc_str = ts.replace('Z', '+00:00')
                 utc_dt = datetime.fromisoformat(utc_str)
-                local_dt = utc_dt.astimezone()
-                time_str = local_dt.strftime('%H:%M')
+                pst_dt = utc_dt.astimezone(PST)
+                time_str = pst_dt.strftime('%H:%M')
         except Exception:
             time_str = '??:??'
 
