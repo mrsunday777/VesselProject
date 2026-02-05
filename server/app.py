@@ -546,7 +546,26 @@ async def _notify_brandon(message: str):
         pass
 
 
-DUST_THRESHOLD = 0.003  # SOL needed to execute a sell — tokens stuck below this are dust
+DUST_GAS_THRESHOLD = 0.003  # SOL needed to execute a sell tx
+DUST_USD_THRESHOLD = 0.50   # Tokens worth less than this are dust (write-off)
+
+
+async def _get_token_usd_value(mint: str, ui_amount: float) -> float | None:
+    """Price-check a token via DexScreener. Returns USD value or None if unavailable."""
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(f"https://api.dexscreener.com/latest/dex/tokens/{mint}")
+        if resp.status_code != 200:
+            return None
+        pairs = resp.json().get('pairs') or []
+        if not pairs:
+            return None
+        price_usd = float(pairs[0].get('priceUsd', 0))
+        return ui_amount * price_usd
+    except Exception as e:
+        print(f"[capital-flow] DexScreener price check failed for {mint}: {e}")
+        return None
+
 
 async def _handle_post_sell_capital_flow(agent_name: str, sell_percent: int = 100):
     """
@@ -555,8 +574,11 @@ async def _handle_post_sell_capital_flow(agent_name: str, sell_percent: int = 10
     Logic:
     - If agent still has meaningful tokens: return SOL above gas reserve (keep 0.01 for next sell)
     - If agent has no tokens (or only dust): return ALL SOL and auto-release agent
-    - Dust detection: after 100% sell, any remaining tokens are rounding artifacts.
-      Also, tokens are stuck if agent lacks gas to sell them (< 0.003 SOL).
+    - Dust detection:
+      1) After 100% sell: remaining tokens are rounding artifacts → always dust
+      2) Agent has no gas AND tokens worth < $0.50 → dust (write-off)
+      3) Agent has no gas BUT tokens worth >= $0.50 → NOT dust, notify Brandon
+      4) Can't price-check → fail safe: don't release, notify Brandon
     - MsWednesday exempt (she IS the apex wallet)
     """
     if agent_name == 'MsWednesday':
@@ -575,15 +597,47 @@ async def _handle_post_sell_capital_flow(agent_name: str, sell_percent: int = 10
     raw_has_tokens = any(t.get('ui_amount', 0) > 0 for t in tokens)
     sol_balance = holdings.get('sol_balance', 0)
 
-    # Dust detection: treat leftover tokens as empty if:
-    # 1) This was a 100% sell (remaining is just rounding artifacts), OR
-    # 2) Agent can't afford gas to sell them (tokens are stuck)
-    if raw_has_tokens and (sell_percent >= 100 or sol_balance < DUST_THRESHOLD):
-        print(f"[capital-flow] {agent_name}: dust detected after {sell_percent}% sell "
-              f"(sol={sol_balance:.6f}, tokens={len(tokens)}). Treating as empty.")
-        has_tokens = False
-    else:
-        has_tokens = raw_has_tokens
+    # Dust detection
+    has_tokens = raw_has_tokens
+    if raw_has_tokens:
+        if sell_percent >= 100:
+            # 100% sell — remaining is rounding artifacts
+            print(f"[capital-flow] {agent_name}: 100% sell, remaining tokens are dust. Releasing.")
+            has_tokens = False
+        elif sol_balance < DUST_GAS_THRESHOLD:
+            # No gas to sell — check if tokens are worth writing off
+            total_usd = 0.0
+            price_failed = False
+            for t in tokens:
+                if t.get('ui_amount', 0) > 0:
+                    val = await _get_token_usd_value(t['mint'], t['ui_amount'])
+                    if val is None:
+                        price_failed = True
+                        break
+                    total_usd += val
+
+            if price_failed:
+                # Can't price → fail safe: don't release, notify Brandon
+                print(f"[capital-flow] {agent_name}: can't price tokens, not releasing")
+                await _notify_brandon(
+                    f"**Stuck Agent**: {agent_name}\n"
+                    f"Has tokens but no gas. Could not price-check.\n"
+                    f"Manual review needed."
+                )
+            elif total_usd < DUST_USD_THRESHOLD:
+                # Tokens worth < $0.50 — dust, write off
+                print(f"[capital-flow] {agent_name}: tokens worth ${total_usd:.4f} "
+                      f"(< ${DUST_USD_THRESHOLD}). Dust. Releasing.")
+                has_tokens = False
+            else:
+                # Tokens worth real money but no gas — alert Brandon
+                print(f"[capital-flow] {agent_name}: tokens worth ${total_usd:.2f} "
+                      f"but no gas to sell. Alerting Brandon.")
+                await _notify_brandon(
+                    f"**Stuck Agent**: {agent_name}\n"
+                    f"Tokens worth ~${total_usd:.2f} but only {sol_balance:.6f} SOL (no gas).\n"
+                    f"Needs gas funding to sell, or manual intervention."
+                )
 
     if has_tokens:
         # Partial sell — keep gas, return the rest
