@@ -23,6 +23,14 @@ Tools:
     almost_graduated()           — Tokens approaching graduation
     new_launches()               — New pump.fun token launches
     catalysts()                  — Trending events (Google Trends, News, Reddit)
+    agents_available()            — Get agent availability state
+    find_available_agent()       — Find first idle agent
+    assign_agent()               — Assign agent to position (mark busy)
+    release_agent()              — Release agent from assignment (mark idle)
+    agent_checkin()              — Manager heartbeat (resets timeout)
+    transfer_sol()               — Transfer native SOL between wallets
+    buy_and_assign()             — Orchestrated: buy → transfer → assign agent
+    sell_and_return()            — Orchestrated: sell → return SOL → release agent
     check_trigger()              — Check TP/SL against live state
     exit_if_triggered()          — Check + sell in one call
 
@@ -450,6 +458,240 @@ class VesselTools:
         if min_score > 0:
             params += f'&min_score={min_score}'
         return self._request('GET', f'/feeds/catalysts?{params}')
+
+    # --- Agent Availability (Multi-Position Isolation Model) ---
+
+    def agents_available(self):
+        """
+        Get agent availability state from relay.
+
+        Returns:
+            Dict with 'agents' map showing each agent's status, position, type.
+            Or None if relay unreachable.
+        """
+        result = self._request('GET', '/agents/availability')
+        if 'error' in result:
+            return None
+        return result
+
+    def find_available_agent(self):
+        """
+        Find first idle agent from availability state.
+
+        Returns:
+            Agent name string or None if all busy.
+        """
+        state = self.agents_available()
+        if not state:
+            return None
+        for agent_name, data in state.get('agents', {}).items():
+            if data.get('status') == 'idle':
+                return agent_name
+        return None
+
+    def assign_agent(self, agent_name, token_mint, agent_type="trader"):
+        """
+        Assign an agent to a position (marks them as busy).
+
+        Args:
+            agent_name: Agent to assign
+            token_mint: Token mint they're managing
+            agent_type: 'trader' or 'manager'
+
+        Returns:
+            {'success': bool, 'agent_name': str, 'status': 'busy', ...}
+        """
+        self._log('ASSIGN_AGENT', {'agent': agent_name, 'token_mint': token_mint, 'type': agent_type})
+        return self._request('POST', '/agents/assign', {
+            'agent_name': agent_name,
+            'token_mint': token_mint,
+            'agent_type': agent_type,
+        })
+
+    def release_agent(self, agent_name):
+        """
+        Release an agent from their assignment (marks them as idle).
+
+        Args:
+            agent_name: Agent to release
+
+        Returns:
+            {'success': bool, 'agent_name': str, 'status': 'idle', ...}
+        """
+        self._log('RELEASE_AGENT', {'agent': agent_name})
+        return self._request('POST', '/agents/release', {
+            'agent_name': agent_name,
+        })
+
+    def agent_checkin(self, agent_name):
+        """
+        Manager heartbeat — resets the 5h timeout clock.
+
+        Args:
+            agent_name: Manager agent checking in
+
+        Returns:
+            {'success': bool, 'last_checkin': str}
+        """
+        return self._request('POST', '/agents/checkin', {
+            'agent_name': agent_name,
+        })
+
+    def transfer_sol(self, from_agent, to_agent, amount_sol=None):
+        """
+        Transfer native SOL between agent wallets via relay.
+        Used for capital return: trader sells → SOL goes back to MsWednesday.
+
+        Args:
+            from_agent: Source agent wallet
+            to_agent: Destination agent wallet
+            amount_sol: SOL to transfer. None = transfer all minus buffer.
+
+        Returns:
+            {'success': bool, 'signature': str, 'amount_sol': float, ...}
+        """
+        self._log('TRANSFER_SOL_INITIATED', {
+            'from_agent': from_agent,
+            'to_agent': to_agent,
+            'amount_sol': amount_sol,
+        })
+
+        payload = {'from_agent': from_agent, 'to_agent': to_agent}
+        if amount_sol is not None:
+            payload['amount_sol'] = amount_sol
+
+        result = self._request('POST', '/execute/transfer-sol', payload)
+        self._log('TRANSFER_SOL_RESULT', result)
+        return result
+
+    def buy_and_assign(self, token_mint, amount_sol, agent_name=None, slippage_bps=75, buyer="MsWednesday"):
+        """
+        Orchestrated flow: find agent → buy → transfer tokens → mark busy.
+        This is the PRIMARY entry method for the isolation model.
+
+        Args:
+            token_mint: Token to buy
+            amount_sol: SOL to spend
+            agent_name: Specific agent to assign (or None for auto-pick)
+            slippage_bps: Slippage for buy
+            buyer: Who buys (default MsWednesday)
+
+        Returns:
+            {'success': bool, 'agent': str, 'buy': {...}, 'transfer': {...}, 'assignment': {...}}
+        """
+        self._log('BUY_AND_ASSIGN_INITIATED', {
+            'token_mint': token_mint,
+            'amount_sol': amount_sol,
+            'requested_agent': agent_name,
+        })
+
+        # Step 1: Find available agent
+        if agent_name is None:
+            agent_name = self.find_available_agent()
+            if agent_name is None:
+                return {
+                    'success': False,
+                    'error': 'No available agents — all busy',
+                    'buy': None,
+                    'transfer': None,
+                    'assignment': None,
+                }
+
+        # Step 2: Buy tokens
+        buy_result = self.buy(token_mint, amount_sol, slippage_bps, buyer)
+        if buy_result.get('status') == 'error' or not buy_result.get('success'):
+            return {
+                'success': False,
+                'error': f"Buy failed: {buy_result.get('error', 'Unknown')}",
+                'agent': agent_name,
+                'buy': buy_result,
+                'transfer': None,
+                'assignment': None,
+            }
+
+        # Step 3: Transfer tokens to agent
+        transfer_result = self.transfer(token_mint, agent_name, percent=100, from_agent=buyer)
+        if not transfer_result.get('success'):
+            return {
+                'success': False,
+                'error': f"Transfer failed: {transfer_result.get('error', 'Unknown')}",
+                'agent': agent_name,
+                'buy': buy_result,
+                'transfer': transfer_result,
+                'assignment': None,
+            }
+
+        # Step 4: Mark agent as busy
+        assign_result = self.assign_agent(agent_name, token_mint, "trader")
+
+        result = {
+            'success': assign_result.get('success', False),
+            'agent': agent_name,
+            'buy': buy_result,
+            'transfer': transfer_result,
+            'assignment': assign_result,
+        }
+
+        self._log('BUY_AND_ASSIGN_RESULT', {
+            'success': result['success'],
+            'agent': agent_name,
+            'token_mint': token_mint,
+        })
+
+        return result
+
+    def sell_and_return(self, agent_name, token_mint, percent=100, slippage_bps=75, return_to="MsWednesday"):
+        """
+        Orchestrated exit: sell position → return SOL to apex → release agent.
+
+        Args:
+            agent_name: Agent selling their position
+            token_mint: Token to sell
+            percent: Percentage to sell (1-100)
+            slippage_bps: Slippage for sell
+            return_to: Who receives the SOL proceeds (default MsWednesday)
+
+        Returns:
+            {'success': bool, 'sell': {...}, 'sol_return': {...}, 'release': {...}}
+        """
+        self._log('SELL_AND_RETURN_INITIATED', {
+            'agent': agent_name,
+            'token_mint': token_mint,
+            'percent': percent,
+            'return_to': return_to,
+        })
+
+        # Step 1: Sell
+        sell_result = self.sell(token_mint, percent, slippage_bps, agent_name)
+        if sell_result.get('status') == 'error' or not sell_result.get('success'):
+            return {
+                'success': False,
+                'error': f"Sell failed: {sell_result.get('error', 'Unknown')}",
+                'sell': sell_result,
+                'sol_return': None,
+                'release': None,
+            }
+
+        # Step 2: Return SOL to apex (all minus buffer)
+        sol_return = self.transfer_sol(agent_name, return_to)
+
+        # Step 3: Release agent (even if SOL return fails — agent is done)
+        release = self.release_agent(agent_name)
+
+        result = {
+            'success': True,
+            'sell': sell_result,
+            'sol_return': sol_return,
+            'release': release,
+        }
+
+        self._log('SELL_AND_RETURN_RESULT', {
+            'success': True,
+            'agent': agent_name,
+            'sol_returned': sol_return.get('amount_sol', 0) if sol_return.get('success') else 0,
+        })
+
+        return result
 
     def check_trigger(self, tp_pct=None, sl_pct=None):
         """

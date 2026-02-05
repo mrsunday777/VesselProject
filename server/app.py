@@ -35,6 +35,12 @@ POSITION_STATE_FILE = Path.home() / 'position_state.json'
 # Vessel state file (trade manager assignment, dynamic config)
 VESSEL_STATE_FILE = Path(PROJECT_ROOT) / 'vessel_state.json'
 
+# Agent availability state (1 agent = 1 position isolation model)
+AGENT_AVAILABILITY_FILE = Path(PROJECT_ROOT) / 'agent_availability.json'
+
+# Manager timeout: auto-release after 5 hours with no check-in
+MANAGER_TIMEOUT_HOURS = 5
+
 # SXAN Dashboard (local to this machine — never exposed to phone directly)
 SXAN_API_BASE = "http://localhost:5001"
 
@@ -188,17 +194,120 @@ def relay_log(action: str, details: dict):
     print(f"[relay] {action}: {json.dumps(details)}")
 
 
+# --- Agent Availability State ---
+
+def _read_availability() -> dict:
+    """Read agent availability state. Returns default if file missing."""
+    if not AGENT_AVAILABILITY_FILE.exists():
+        return {
+            'timestamp': datetime.utcnow().isoformat() + 'Z',
+            'agents': {
+                'CP0': {'status': 'idle', 'position': None, 'assigned_at': None, 'type': None, 'last_checkin': None},
+                'CP1': {'status': 'idle', 'position': None, 'assigned_at': None, 'type': None, 'last_checkin': None},
+                'CP9': {'status': 'idle', 'position': None, 'assigned_at': None, 'type': None, 'last_checkin': None},
+                'msSunday': {'status': 'idle', 'position': None, 'assigned_at': None, 'type': None, 'last_checkin': None},
+            },
+        }
+    try:
+        with open(AGENT_AVAILABILITY_FILE) as f:
+            return json.load(f)
+    except (json.JSONDecodeError, IOError):
+        return {'timestamp': None, 'agents': {}}
+
+
+def _write_availability(state: dict):
+    """Atomic write agent availability state."""
+    import tempfile
+    state['timestamp'] = datetime.utcnow().isoformat() + 'Z'
+    fd, tmp_path = tempfile.mkstemp(dir=PROJECT_ROOT, suffix='.json')
+    try:
+        with os.fdopen(fd, 'w') as f:
+            json.dump(state, f, indent=2)
+        os.replace(tmp_path, AGENT_AVAILABILITY_FILE)
+    except Exception:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
+
+
+def _find_available_agent(state: dict) -> str:
+    """Return first idle agent name, or None if all busy."""
+    for agent_name, data in state.get('agents', {}).items():
+        if data.get('status') == 'idle':
+            return agent_name
+    return None
+
+
+def _check_manager_timeouts(state: dict) -> list:
+    """Check for manager agents past timeout. Returns list of released agent names."""
+    released = []
+    now = datetime.utcnow()
+    for agent_name, data in state.get('agents', {}).items():
+        if data.get('type') != 'manager' or data.get('status') != 'busy':
+            continue
+        last_checkin = data.get('last_checkin')
+        if not last_checkin:
+            continue
+        try:
+            checkin_dt = datetime.fromisoformat(last_checkin.replace('Z', '+00:00').replace('+00:00', ''))
+            elapsed_hours = (now - checkin_dt).total_seconds() / 3600
+            if elapsed_hours > MANAGER_TIMEOUT_HOURS:
+                data['status'] = 'idle'
+                data['position'] = None
+                data['assigned_at'] = None
+                data['type'] = None
+                data['last_checkin'] = None
+                released.append(agent_name)
+                relay_log('MANAGER_TIMEOUT', {'agent': agent_name, 'elapsed_hours': round(elapsed_hours, 1)})
+        except (ValueError, TypeError):
+            pass
+    return released
+
+
 # --- App ---
+
+# Background task handle for manager timeout checker
+_timeout_task = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global _timeout_task
     print(f"[server] Vessel relay starting on {SERVER_HOST}:{SERVER_PORT}")
     init_db()
     print(f"[server] Task database initialized: {DB_PATH}")
+
+    # Start background manager timeout checker
+    _timeout_task = asyncio.create_task(_manager_timeout_loop())
+    print("[server] Manager timeout checker started (5min interval)")
+
     yield
+
+    # Cleanup background task
+    if _timeout_task:
+        _timeout_task.cancel()
+        try:
+            await _timeout_task
+        except asyncio.CancelledError:
+            pass
     print("[server] Shutting down")
 
 app = FastAPI(title="VesselProject Relay", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
+
+
+async def _manager_timeout_loop():
+    """Background: check manager agent timeouts every 5 minutes."""
+    while True:
+        await asyncio.sleep(300)  # 5 minutes
+        try:
+            state = _read_availability()
+            released = _check_manager_timeouts(state)
+            if released:
+                _write_availability(state)
+                print(f"[server] Manager timeout: released {released}")
+        except Exception as e:
+            print(f"[server] Manager timeout check error: {e}")
 
 
 # --- REST endpoints (for MsWednesday to submit tasks) ---
@@ -919,6 +1028,258 @@ async def set_trade_manager(req: SetTradeManagerRequest, request: Request, autho
         'trade_manager': req.agent_name,
         'previous': old_manager,
     }
+
+
+# --- Agent Availability (Multi-Position Isolation Model) ---
+# 1 agent = 1 position. Agents tracked as idle/busy.
+# Trader agents manage positions, manager agents do monitoring.
+# Manager agents auto-release after 5h no-checkin.
+
+
+class AssignRequest(BaseModel):
+    agent_name: str
+    token_mint: str
+    agent_type: str = "trader"  # "trader" or "manager"
+
+
+class ReleaseRequest(BaseModel):
+    agent_name: str
+
+
+class CheckinRequest(BaseModel):
+    agent_name: str
+
+
+class TransferSolRequest(BaseModel):
+    from_agent: str
+    to_agent: str
+    amount_sol: Optional[float] = None  # None = transfer all minus buffer
+
+
+@app.get("/agents/availability")
+async def get_agents_availability(authorization: str = Header()):
+    """Get agent availability state. Shows who is idle vs busy."""
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    state = _read_availability()
+    return state
+
+
+@app.post("/agents/assign")
+async def assign_agent(req: AssignRequest, request: Request, authorization: str = Header()):
+    """
+    Assign an agent to a position. Marks them as busy.
+    Validates: agent exists, is idle, and type is valid.
+    """
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    requester = get_requester(request)
+
+    if req.agent_name not in AGENT_WHITELIST:
+        relay_log('ASSIGN_REJECTED', {'reason': 'invalid_agent', 'agent_name': req.agent_name[:50]})
+        raise HTTPException(status_code=403, detail=f"Agent '{req.agent_name}' not in whitelist")
+
+    if not SOLANA_ADDR_RE.match(req.token_mint) and req.agent_type == 'trader':
+        relay_log('ASSIGN_REJECTED', {'reason': 'invalid_mint', 'agent': req.agent_name})
+        raise HTTPException(status_code=400, detail="Invalid token mint address")
+
+    if req.agent_type not in ('trader', 'manager'):
+        raise HTTPException(status_code=400, detail="agent_type must be 'trader' or 'manager'")
+
+    state = _read_availability()
+    agents = state.get('agents', {})
+
+    if req.agent_name not in agents:
+        agents[req.agent_name] = {'status': 'idle', 'position': None, 'assigned_at': None, 'type': None, 'last_checkin': None}
+
+    agent = agents[req.agent_name]
+    if agent.get('status') == 'busy':
+        relay_log('ASSIGN_REJECTED', {
+            'reason': 'agent_busy',
+            'agent': req.agent_name,
+            'current_position': agent.get('position'),
+        })
+        return JSONResponse(status_code=409, content={
+            'success': False,
+            'error': f"Agent '{req.agent_name}' is busy",
+            'current_position': agent.get('position'),
+        })
+
+    now = datetime.utcnow().isoformat() + 'Z'
+    agent['status'] = 'busy'
+    agent['position'] = req.token_mint if req.agent_type == 'trader' else None
+    agent['assigned_at'] = now
+    agent['type'] = req.agent_type
+    if req.agent_type == 'manager':
+        agent['last_checkin'] = now
+
+    _write_availability(state)
+
+    relay_log('AGENT_ASSIGNED', {
+        'agent': req.agent_name,
+        'type': req.agent_type,
+        'position': req.token_mint,
+        'requester': requester,
+    })
+
+    return {
+        'success': True,
+        'agent_name': req.agent_name,
+        'status': 'busy',
+        'type': req.agent_type,
+        'position': req.token_mint,
+    }
+
+
+@app.post("/agents/release")
+async def release_agent(req: ReleaseRequest, request: Request, authorization: str = Header()):
+    """
+    Release an agent from their assignment. Marks them as idle.
+    Does NOT auto-transfer SOL — caller handles that separately.
+    """
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    requester = get_requester(request)
+
+    if req.agent_name not in AGENT_WHITELIST:
+        relay_log('RELEASE_REJECTED', {'reason': 'invalid_agent', 'agent_name': req.agent_name[:50]})
+        raise HTTPException(status_code=403, detail=f"Agent '{req.agent_name}' not in whitelist")
+
+    state = _read_availability()
+    agents = state.get('agents', {})
+
+    if req.agent_name not in agents:
+        return JSONResponse(status_code=404, content={'success': False, 'error': 'Agent not tracked'})
+
+    agent = agents[req.agent_name]
+    old_position = agent.get('position')
+    old_type = agent.get('type')
+
+    agent['status'] = 'idle'
+    agent['position'] = None
+    agent['assigned_at'] = None
+    agent['type'] = None
+    agent['last_checkin'] = None
+
+    _write_availability(state)
+
+    relay_log('AGENT_RELEASED', {
+        'agent': req.agent_name,
+        'old_position': old_position,
+        'old_type': old_type,
+        'requester': requester,
+    })
+
+    return {
+        'success': True,
+        'agent_name': req.agent_name,
+        'status': 'idle',
+        'released_from': old_position,
+        'previous_type': old_type,
+    }
+
+
+@app.post("/agents/checkin")
+async def agent_checkin(req: CheckinRequest, request: Request, authorization: str = Header()):
+    """
+    Manager agent heartbeat. Resets the timeout clock.
+    Only meaningful for agents with type='manager'.
+    """
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    requester = get_requester(request)
+
+    if req.agent_name not in AGENT_WHITELIST:
+        raise HTTPException(status_code=403, detail=f"Agent '{req.agent_name}' not in whitelist")
+
+    state = _read_availability()
+    agents = state.get('agents', {})
+
+    if req.agent_name not in agents:
+        return JSONResponse(status_code=404, content={'success': False, 'error': 'Agent not tracked'})
+
+    agent = agents[req.agent_name]
+    if agent.get('type') != 'manager':
+        return JSONResponse(status_code=400, content={
+            'success': False,
+            'error': f"Agent '{req.agent_name}' is not a manager (type: {agent.get('type')})",
+        })
+
+    now = datetime.utcnow().isoformat() + 'Z'
+    agent['last_checkin'] = now
+
+    _write_availability(state)
+
+    relay_log('MANAGER_CHECKIN', {'agent': req.agent_name, 'requester': requester})
+
+    return {'success': True, 'agent_name': req.agent_name, 'last_checkin': now}
+
+
+@app.post("/execute/transfer-sol")
+async def relay_transfer_sol(req: TransferSolRequest, request: Request, authorization: str = Header()):
+    """
+    Proxy SOL transfer between agent wallets.
+    Used for capital return: trader sells → SOL goes back to MsWednesday.
+    """
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    requester = get_requester(request)
+
+    if req.from_agent not in AGENT_WHITELIST:
+        relay_log('TRANSFER_SOL_REJECTED', {'reason': 'invalid_from_agent', 'from_agent': req.from_agent[:50]})
+        raise HTTPException(status_code=403, detail=f"Agent '{req.from_agent}' not in whitelist")
+
+    if req.to_agent not in AGENT_WHITELIST:
+        relay_log('TRANSFER_SOL_REJECTED', {'reason': 'invalid_to_agent', 'to_agent': req.to_agent[:50]})
+        raise HTTPException(status_code=403, detail=f"Agent '{req.to_agent}' not in whitelist")
+
+    if req.amount_sol is not None and req.amount_sol <= 0:
+        raise HTTPException(status_code=400, detail="amount_sol must be positive")
+
+    if not AGENT_API_TOKEN:
+        raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
+
+    relay_log('TRANSFER_SOL_REQUESTED', {
+        'from_agent': req.from_agent,
+        'to_agent': req.to_agent,
+        'amount_sol': req.amount_sol,
+        'requester': requester or req.from_agent,
+    })
+
+    payload = {'to_agent': req.to_agent}
+    if req.amount_sol is not None:
+        payload['amount_sol'] = req.amount_sol
+
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            resp = await client.post(
+                f"{SXAN_API_BASE}/api/agent-wallet/transfer-sol/{req.from_agent}",
+                json=payload,
+                headers={'Authorization': f'Bearer {AGENT_API_TOKEN}'},
+            )
+
+        result = resp.json() if resp.status_code == 200 else {'error': resp.text}
+
+        relay_log('TRANSFER_SOL_RESULT', {
+            'from_agent': req.from_agent,
+            'to_agent': req.to_agent,
+            'status_code': resp.status_code,
+            'signature': result.get('signature', 'none'),
+        })
+
+        if resp.status_code == 200:
+            return result
+        else:
+            return JSONResponse(status_code=resp.status_code, content=result)
+
+    except Exception as e:
+        relay_log('TRANSFER_SOL_ERROR', {'from_agent': req.from_agent, 'to_agent': req.to_agent, 'error': str(e)})
+        return JSONResponse(status_code=502, content={'error': f'SXAN API unreachable: {str(e)}'})
 
 
 @app.get("/feeds/launches")
