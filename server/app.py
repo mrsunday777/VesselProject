@@ -288,6 +288,13 @@ async def get_position_state(authorization: str = Header()):
 # Phone agents call these instead of the Mac's SXAN API directly.
 
 
+class BuyRequest(BaseModel):
+    token_mint: str
+    amount_sol: float
+    slippage_bps: int = 75
+    agent_name: str = "MsWednesday"
+
+
 class SellRequest(BaseModel):
     token_mint: str
     percent: float = 100.0
@@ -372,6 +379,196 @@ async def relay_sell(req: SellRequest, authorization: str = Header()):
     except Exception as e:
         relay_log('SELL_ERROR', {'agent_name': req.agent_name, 'error': str(e)})
         return JSONResponse(status_code=502, content={'error': f'SXAN API unreachable: {str(e)}'})
+
+
+@app.post("/execute/buy")
+async def relay_buy(req: BuyRequest, authorization: str = Header()):
+    """
+    Proxy buy command to SXAN wallet API.
+    Validates input, logs the action, forwards to localhost:5001.
+    Routes to the correct agent wallet based on agent_name.
+    """
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    # Validate agent_name against whitelist
+    if req.agent_name not in AGENT_WHITELIST:
+        relay_log('BUY_REJECTED', {'reason': 'invalid_agent', 'agent_name': req.agent_name[:50]})
+        raise HTTPException(status_code=403, detail=f"Agent '{req.agent_name}' not in whitelist")
+
+    # Validate token_mint (Solana base58 address)
+    if not SOLANA_ADDR_RE.match(req.token_mint):
+        relay_log('BUY_REJECTED', {'reason': 'invalid_mint', 'agent': req.agent_name, 'mint': req.token_mint[:20]})
+        raise HTTPException(status_code=400, detail="Invalid token mint address")
+
+    # Validate amount_sol (0 < amount <= 1.0 SOL)
+    if not (0 < req.amount_sol <= 1.0):
+        relay_log('BUY_REJECTED', {'reason': 'invalid_amount', 'agent': req.agent_name, 'amount': req.amount_sol})
+        raise HTTPException(status_code=400, detail="amount_sol must be between 0 and 1.0 SOL")
+
+    # Validate slippage (1-500 bps)
+    if not (1 <= req.slippage_bps <= 500):
+        relay_log('BUY_REJECTED', {'reason': 'invalid_slippage', 'agent': req.agent_name, 'slippage': req.slippage_bps})
+        raise HTTPException(status_code=400, detail="Slippage must be between 1 and 500 bps")
+
+    if not AGENT_API_TOKEN:
+        relay_log('BUY_REJECTED', {'reason': 'no_agent_token', 'agent': req.agent_name})
+        raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
+
+    relay_log('BUY_REQUESTED', {
+        'agent_name': req.agent_name,
+        'token_mint': req.token_mint,
+        'amount_sol': req.amount_sol,
+        'slippage_bps': req.slippage_bps,
+    })
+
+    # Forward to SXAN API (localhost — relay runs on the Mac)
+    try:
+        async with httpx.AsyncClient(timeout=90) as client:
+            resp = await client.post(
+                f"{SXAN_API_BASE}/api/agent-wallet/buy/{req.agent_name}",
+                json={
+                    'token_mint': req.token_mint,
+                    'amount_sol': req.amount_sol,
+                    'slippage_bps': req.slippage_bps,
+                },
+                headers={'Authorization': f'Bearer {AGENT_API_TOKEN}'},
+            )
+
+        result = resp.json() if resp.status_code == 200 else {'error': resp.text}
+
+        relay_log('BUY_RESULT', {
+            'agent_name': req.agent_name,
+            'status_code': resp.status_code,
+            'signature': result.get('signature', 'none'),
+        })
+
+        if resp.status_code == 200:
+            return result
+        else:
+            return JSONResponse(status_code=resp.status_code, content=result)
+
+    except Exception as e:
+        relay_log('BUY_ERROR', {'agent_name': req.agent_name, 'error': str(e)})
+        return JSONResponse(status_code=502, content={'error': f'SXAN API unreachable: {str(e)}'})
+
+
+@app.get("/wallet-status/{agent_name}")
+async def relay_wallet_status(agent_name: str, authorization: str = Header()):
+    """
+    Proxy wallet status request to SXAN wallet API.
+    Returns pubkey, sol_balance, tokens, enabled status.
+    """
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    if agent_name not in AGENT_WHITELIST:
+        relay_log('WALLET_STATUS_REJECTED', {'reason': 'invalid_agent', 'agent_name': agent_name[:50]})
+        raise HTTPException(status_code=403, detail=f"Agent '{agent_name}' not in whitelist")
+
+    if not AGENT_API_TOKEN:
+        raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
+
+    relay_log('WALLET_STATUS', {'agent_name': agent_name})
+
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get(
+                f"{SXAN_API_BASE}/api/agent-wallet/status/{agent_name}",
+                headers={'Authorization': f'Bearer {AGENT_API_TOKEN}'},
+            )
+
+        if resp.status_code == 200:
+            return resp.json()
+        else:
+            return JSONResponse(status_code=resp.status_code, content={'error': resp.text})
+
+    except Exception as e:
+        relay_log('WALLET_STATUS_ERROR', {'agent_name': agent_name, 'error': str(e)})
+        return JSONResponse(status_code=502, content={'error': f'SXAN API unreachable: {str(e)}'})
+
+
+@app.get("/transactions/{agent_name}")
+async def relay_transactions(agent_name: str, authorization: str = Header(), limit: int = 20):
+    """
+    Proxy transaction history request to SXAN wallet API.
+    Returns recent trades for the specified agent.
+    """
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    if agent_name not in AGENT_WHITELIST:
+        relay_log('TRANSACTIONS_REJECTED', {'reason': 'invalid_agent', 'agent_name': agent_name[:50]})
+        raise HTTPException(status_code=403, detail=f"Agent '{agent_name}' not in whitelist")
+
+    if not AGENT_API_TOKEN:
+        raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
+
+    limit = max(1, min(limit, 100))
+
+    relay_log('TRANSACTIONS', {'agent_name': agent_name, 'limit': limit})
+
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get(
+                f"{SXAN_API_BASE}/api/agent-wallet/transactions/{agent_name}",
+                params={'limit': limit},
+                headers={'Authorization': f'Bearer {AGENT_API_TOKEN}'},
+            )
+
+        if resp.status_code == 200:
+            return resp.json()
+        else:
+            return JSONResponse(status_code=resp.status_code, content={'error': resp.text})
+
+    except Exception as e:
+        relay_log('TRANSACTIONS_ERROR', {'agent_name': agent_name, 'error': str(e)})
+        return JSONResponse(status_code=502, content={'error': f'SXAN API unreachable: {str(e)}'})
+
+
+@app.get("/positions/{agent_name}")
+async def relay_positions(agent_name: str, authorization: str = Header()):
+    """
+    Return positions filtered for a specific agent from position_state.json.
+    Reads from local file (same machine), no proxy needed.
+    """
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    if agent_name not in AGENT_WHITELIST:
+        relay_log('POSITIONS_REJECTED', {'reason': 'invalid_agent', 'agent_name': agent_name[:50]})
+        raise HTTPException(status_code=403, detail=f"Agent '{agent_name}' not in whitelist")
+
+    relay_log('POSITIONS', {'agent_name': agent_name})
+
+    if not POSITION_STATE_FILE.exists():
+        return JSONResponse(content={
+            'positions': [],
+            'sol_balance': 0,
+            'timestamp': None,
+            'status': 'no_data',
+        })
+
+    try:
+        with open(POSITION_STATE_FILE) as f:
+            state = json.load(f)
+
+        all_positions = state.get('positions', [])
+        agent_positions = [p for p in all_positions if p.get('agent') == agent_name]
+
+        return {
+            'positions': agent_positions,
+            'total': len(agent_positions),
+            'sol_balance': state.get('sol_balance', 0),
+            'timestamp': state.get('timestamp'),
+            'status': 'ok',
+        }
+    except (json.JSONDecodeError, IOError) as e:
+        relay_log('POSITIONS_ERROR', {'agent_name': agent_name, 'error': str(e)})
+        return JSONResponse(
+            status_code=500,
+            content={'error': f'Position state read error: {str(e)}'}
+        )
 
 
 @app.post("/notify")

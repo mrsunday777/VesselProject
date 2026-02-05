@@ -7,7 +7,11 @@ Agents never call the Mac's internal APIs directly.
 
 Tools:
     state()             — Get live position state (read-only)
+    buy()               — Buy token via relay → SXAN API (multi-agent)
     sell()              — Exit position via relay → SXAN API (multi-agent)
+    wallet_status()     — Get wallet balance, holdings, enabled status
+    transactions()      — Get recent trade history for an agent
+    my_positions()      — Get only this agent's positions from state
     notify()            — Send Telegram alert to Brandon via relay
     telegram_feed()     — Tokens from monitored Telegram chats
     almost_graduated()  — Tokens approaching graduation
@@ -127,6 +131,79 @@ class VesselTools:
 
         self._log('SELL_RESULT', result)
         return result
+
+    def buy(self, token_mint, amount_sol, slippage_bps=75, agent_name="MsWednesday"):
+        """
+        Buy token via relay → SXAN wallet API.
+
+        Args:
+            token_mint: Solana token mint address
+            amount_sol: Amount of SOL to spend (max 1.0)
+            slippage_bps: Slippage in basis points (default 75)
+            agent_name: Agent wallet to buy from (default MsWednesday)
+
+        Returns:
+            {'signature': '...', 'status': 'success'} on success
+            {'status': 'error', 'error': '...'} on failure
+        """
+        self._log('BUY_INITIATED', {
+            'token_mint': token_mint,
+            'amount_sol': amount_sol,
+            'slippage_bps': slippage_bps,
+            'agent_name': agent_name,
+        })
+
+        result = self._request('POST', '/execute/buy', {
+            'token_mint': token_mint,
+            'amount_sol': amount_sol,
+            'slippage_bps': slippage_bps,
+            'agent_name': agent_name,
+        })
+
+        self._log('BUY_RESULT', result)
+        return result
+
+    def wallet_status(self, agent_name="MsWednesday"):
+        """
+        Get wallet status (balance, holdings, enabled) via relay.
+
+        Args:
+            agent_name: Agent wallet to check (default MsWednesday)
+
+        Returns:
+            Dict with pubkey, sol_balance, tokens, enabled, token_count
+            or {'status': 'error', ...} on failure.
+        """
+        self._log('WALLET_STATUS', {'agent_name': agent_name})
+        return self._request('GET', f'/wallet-status/{agent_name}')
+
+    def transactions(self, agent_name="MsWednesday", limit=20):
+        """
+        Get recent trade history for an agent via relay.
+
+        Args:
+            agent_name: Agent wallet to query (default MsWednesday)
+            limit: Max transactions to return (1-100, default 20)
+
+        Returns:
+            List of transaction dicts or error dict.
+        """
+        self._log('TRANSACTIONS', {'agent_name': agent_name, 'limit': limit})
+        return self._request('GET', f'/transactions/{agent_name}?limit={limit}')
+
+    def my_positions(self, agent_name="MsWednesday"):
+        """
+        Get only this agent's positions from position state via relay.
+
+        Args:
+            agent_name: Agent to filter positions for (default MsWednesday)
+
+        Returns:
+            Dict with positions[], total, sol_balance, timestamp
+            or {'status': 'error', ...} on failure.
+        """
+        self._log('POSITIONS', {'agent_name': agent_name})
+        return self._request('GET', f'/positions/{agent_name}')
 
     def notify(self, title, details, tx_hash=None):
         """
