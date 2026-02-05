@@ -564,10 +564,20 @@ class VesselTools:
         self._log('TRANSFER_SOL_RESULT', result)
         return result
 
+    # Capital flow constants
+    AGENT_GAS_SOL = 0.01     # SOL sent to agent for gas on entry
+    SELF_RESERVE_SOL = 0.01  # SOL buyer keeps for emergency sells
+    TX_FEE_BUFFER = 0.005    # Buffer for token transfer + SOL transfer tx fees
+
     def buy_and_assign(self, token_mint, amount_sol, agent_name=None, slippage_bps=75, buyer="MsWednesday"):
         """
-        Orchestrated flow: find agent → buy → transfer tokens → mark busy.
+        Orchestrated flow: find agent → buy → transfer tokens → gas → mark busy.
         This is the PRIMARY entry method for the isolation model.
+
+        Pre-flight checks ensure buyer retains enough SOL for:
+        - 0.01 agent gas
+        - 0.01 self reserve (emergency sells)
+        - 0.005 tx fee buffer
 
         Args:
             token_mint: Token to buy
@@ -579,10 +589,31 @@ class VesselTools:
         Returns:
             {'success': bool, 'agent': str, 'buy': {...}, 'transfer': {...}, 'assignment': {...}}
         """
+        # Pre-flight balance check
+        overhead = self.AGENT_GAS_SOL + self.SELF_RESERVE_SOL + self.TX_FEE_BUFFER
+        required = amount_sol + overhead
+        status = self.wallet_status(buyer)
+        current_balance = status.get('sol_balance', 0) if isinstance(status, dict) else 0
+        if current_balance < required:
+            return {
+                'success': False,
+                'error': (
+                    f'Insufficient balance for buy_and_assign. '
+                    f'{buyer} has {current_balance:.6f} SOL, needs {required:.6f} SOL '
+                    f'({amount_sol} trade + {self.AGENT_GAS_SOL} agent gas + '
+                    f'{self.SELF_RESERVE_SOL} self reserve + {self.TX_FEE_BUFFER} tx fees)'
+                ),
+                'buy': None,
+                'transfer': None,
+                'gas_sent': None,
+                'assignment': None,
+            }
+
         self._log('BUY_AND_ASSIGN_INITIATED', {
             'token_mint': token_mint,
             'amount_sol': amount_sol,
             'requested_agent': agent_name,
+            'buyer_balance': current_balance,
         })
 
         # Step 1: Find available agent
