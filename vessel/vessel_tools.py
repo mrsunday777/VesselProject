@@ -6,19 +6,25 @@ ALL communication with the Mac goes through the relay server.
 Agents never call the Mac's internal APIs directly.
 
 Tools:
-    state()             — Get live position state (read-only)
-    buy()               — Buy token via relay → SXAN API (multi-agent)
-    sell()              — Exit position via relay → SXAN API (multi-agent)
-    wallet_status()     — Get wallet balance, holdings, enabled status
-    transactions()      — Get recent trade history for an agent
-    my_positions()      — Get only this agent's positions from state
-    notify()            — Send Telegram alert to Brandon via relay
-    telegram_feed()     — Tokens from monitored Telegram chats
-    almost_graduated()  — Tokens approaching graduation
-    new_launches()      — New pump.fun token launches
-    catalysts()         — Trending events (Google Trends, News, Reddit)
-    check_trigger()     — Check TP/SL against live state
-    exit_if_triggered() — Check + sell in one call
+    state()                      — Get live position state (read-only)
+    buy()                        — Buy token via relay → SXAN API (multi-agent)
+    sell()                       — Exit position via relay → SXAN API (multi-agent)
+    transfer()                   — Transfer tokens between agent wallets
+    buy_and_transfer()           — Atomic buy + transfer to specific agent
+    get_trade_manager()          — Get current trade manager assignment
+    set_trade_manager()          — Set who receives new positions
+    transfer_to_manager()        — Transfer to current trade manager (dynamic routing)
+    buy_and_transfer_to_manager() — Atomic buy + transfer to current manager
+    wallet_status()              — Get wallet balance, holdings, enabled status
+    transactions()               — Get recent trade history for an agent
+    my_positions()               — Get only this agent's positions from state
+    notify()                     — Send Telegram alert to Brandon via relay
+    telegram_feed()              — Tokens from monitored Telegram chats
+    almost_graduated()           — Tokens approaching graduation
+    new_launches()               — New pump.fun token launches
+    catalysts()                  — Trending events (Google Trends, News, Reddit)
+    check_trigger()              — Check TP/SL against live state
+    exit_if_triggered()          — Check + sell in one call
 
 Usage:
     from vessel_tools import VesselTools
@@ -164,6 +170,168 @@ class VesselTools:
         })
 
         self._log('BUY_RESULT', result)
+        return result
+
+    def transfer(self, token_mint, to_agent, amount=None, percent=100, from_agent="MsWednesday"):
+        """
+        Transfer tokens from one agent wallet to another via relay.
+
+        Args:
+            token_mint: Token mint address
+            to_agent: Destination agent name
+            amount: Exact token amount (optional)
+            percent: Percentage of balance to transfer (1-100, default 100)
+            from_agent: Source agent name (default MsWednesday)
+
+        Returns:
+            {'success': bool, 'signature': str, ...} on success
+            {'status': 'error', 'error': '...'} on failure
+        """
+        self._log('TRANSFER_INITIATED', {
+            'token_mint': token_mint,
+            'from_agent': from_agent,
+            'to_agent': to_agent,
+            'percent': percent,
+            'amount': amount,
+        })
+
+        payload = {
+            'token_mint': token_mint,
+            'to_agent': to_agent,
+            'from_agent': from_agent,
+            'percent': percent,
+        }
+        if amount is not None:
+            payload['amount'] = amount
+
+        result = self._request('POST', '/execute/transfer', payload)
+
+        self._log('TRANSFER_RESULT', result)
+        return result
+
+    def buy_and_transfer(self, token_mint, amount_sol, to_agent, slippage_bps=75, agent_name="MsWednesday"):
+        """
+        Atomic buy + transfer: Entry followed by immediate ownership transfer.
+
+        Args:
+            token_mint: Token mint address
+            amount_sol: SOL to spend on buy
+            to_agent: Agent who will manage the position
+            slippage_bps: Slippage for buy
+            agent_name: Agent buying the tokens (default MsWednesday)
+
+        Returns:
+            {'success': bool, 'buy': {...}, 'transfer': {...}}
+        """
+        self._log('BUY_AND_TRANSFER_INITIATED', {
+            'token_mint': token_mint,
+            'amount_sol': amount_sol,
+            'to_agent': to_agent,
+        })
+
+        # Step 1: Buy
+        buy_result = self.buy(token_mint, amount_sol, slippage_bps, agent_name)
+        if buy_result.get('status') == 'error' or not buy_result.get('success'):
+            return {
+                'success': False,
+                'error': f"Buy failed: {buy_result.get('error', 'Unknown')}",
+                'buy': buy_result,
+                'transfer': None,
+            }
+
+        # Step 2: Transfer 100% to managing agent
+        transfer_result = self.transfer(token_mint, to_agent, percent=100, from_agent=agent_name)
+
+        result = {
+            'success': transfer_result.get('success', False),
+            'buy': buy_result,
+            'transfer': transfer_result,
+            'error': transfer_result.get('error') if not transfer_result.get('success') else None,
+        }
+
+        self._log('BUY_AND_TRANSFER_RESULT', result)
+        return result
+
+    # --- Trade Manager (dynamic routing) ---
+
+    def get_trade_manager(self):
+        """
+        Get current trade manager from vessel state.
+        Returns the agent who receives positions after entry.
+        """
+        result = self._request('GET', '/trade-manager')
+        return result.get('trade_manager')
+
+    def set_trade_manager(self, agent_name):
+        """
+        Set current trade manager.
+        All new positions will be transferred to this agent after buy.
+
+        Args:
+            agent_name: Agent to assign as trade manager (e.g., 'CP9', 'CP0', 'msSunday')
+
+        Returns:
+            {'success': bool, 'trade_manager': str, 'previous': str}
+        """
+        self._log('SET_TRADE_MANAGER', {'agent_name': agent_name})
+        return self._request('POST', '/trade-manager', {'agent_name': agent_name})
+
+    def transfer_to_manager(self, token_mint, amount=None, percent=100, from_agent="MsWednesday"):
+        """
+        Transfer tokens to the current trade manager.
+        Vessel infra handles routing — caller doesn't need to know who's managing.
+
+        Args:
+            token_mint: Token mint address
+            amount: Exact token amount (optional)
+            percent: Percentage of balance to transfer (1-100, default 100)
+            from_agent: Source agent name (default MsWednesday)
+
+        Returns:
+            {'success': bool, 'signature': str, 'to_agent': str, ...}
+        """
+        manager = self.get_trade_manager()
+        if not manager:
+            self._log('TRANSFER_TO_MANAGER_FAILED', {'error': 'No trade manager configured'})
+            return {'success': False, 'error': 'No trade manager configured'}
+
+        self._log('TRANSFER_TO_MANAGER', {
+            'token_mint': token_mint,
+            'from_agent': from_agent,
+            'to_manager': manager,
+            'percent': percent,
+        })
+
+        return self.transfer(token_mint, manager, amount, percent, from_agent)
+
+    def buy_and_transfer_to_manager(self, token_mint, amount_sol, slippage_bps=75, agent_name="MsWednesday"):
+        """
+        Atomic buy + transfer to current trade manager.
+        MsWednesday entry discipline → automatic handoff to whoever is managing.
+
+        Args:
+            token_mint: Token mint address
+            amount_sol: SOL to spend on buy
+            slippage_bps: Slippage for buy
+            agent_name: Agent buying the tokens (default MsWednesday)
+
+        Returns:
+            {'success': bool, 'buy': {...}, 'transfer': {...}, 'trade_manager': str}
+        """
+        manager = self.get_trade_manager()
+        if not manager:
+            self._log('BUY_AND_TRANSFER_TO_MANAGER_FAILED', {'error': 'No trade manager configured'})
+            return {'success': False, 'error': 'No trade manager configured', 'buy': None, 'transfer': None}
+
+        self._log('BUY_AND_TRANSFER_TO_MANAGER_INITIATED', {
+            'token_mint': token_mint,
+            'amount_sol': amount_sol,
+            'to_manager': manager,
+        })
+
+        result = self.buy_and_transfer(token_mint, amount_sol, manager, slippage_bps, agent_name)
+        result['trade_manager'] = manager
+
         return result
 
     def wallet_status(self, agent_name="MsWednesday"):

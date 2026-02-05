@@ -32,6 +32,9 @@ from config import SERVER_HOST, SERVER_PORT, VESSEL_SECRET
 # Position state file (written by vessel_monitor_service on this machine)
 POSITION_STATE_FILE = Path.home() / 'position_state.json'
 
+# Vessel state file (trade manager assignment, dynamic config)
+VESSEL_STATE_FILE = Path(PROJECT_ROOT) / 'vessel_state.json'
+
 # SXAN Dashboard (local to this machine — never exposed to phone directly)
 SXAN_API_BASE = "http://localhost:5001"
 
@@ -311,6 +314,14 @@ class SellRequest(BaseModel):
     agent_name: str = "MsWednesday"
 
 
+class TransferRequest(BaseModel):
+    token_mint: str
+    to_agent: str
+    amount: Optional[float] = None
+    percent: int = 100
+    from_agent: str = "MsWednesday"
+
+
 class NotifyRequest(BaseModel):
     title: str
     details: str
@@ -465,6 +476,92 @@ async def relay_buy(req: BuyRequest, request: Request, authorization: str = Head
 
     except Exception as e:
         relay_log('BUY_ERROR', {'agent_name': req.agent_name, 'error': str(e)})
+        return JSONResponse(status_code=502, content={'error': f'SXAN API unreachable: {str(e)}'})
+
+
+@app.post("/execute/transfer")
+async def relay_transfer(req: TransferRequest, request: Request, authorization: str = Header()):
+    """
+    Proxy transfer command to SXAN wallet API.
+    Transfers SPL tokens from one agent wallet to another.
+    Used for transfer-on-entry model.
+    """
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    requester = get_requester(request)
+
+    # Validate both agents against whitelist
+    if req.from_agent not in AGENT_WHITELIST:
+        relay_log('TRANSFER_REJECTED', {'reason': 'invalid_from_agent', 'from_agent': req.from_agent[:50]})
+        raise HTTPException(status_code=403, detail=f"Agent '{req.from_agent}' not in whitelist")
+
+    if req.to_agent not in AGENT_WHITELIST:
+        relay_log('TRANSFER_REJECTED', {'reason': 'invalid_to_agent', 'to_agent': req.to_agent[:50]})
+        raise HTTPException(status_code=403, detail=f"Agent '{req.to_agent}' not in whitelist")
+
+    # Validate token_mint (Solana base58 address)
+    if not SOLANA_ADDR_RE.match(req.token_mint):
+        relay_log('TRANSFER_REJECTED', {'reason': 'invalid_mint', 'from_agent': req.from_agent, 'mint': req.token_mint[:20]})
+        raise HTTPException(status_code=400, detail="Invalid token mint address")
+
+    # Validate percent (1-100)
+    if not (1 <= req.percent <= 100):
+        relay_log('TRANSFER_REJECTED', {'reason': 'invalid_percent', 'from_agent': req.from_agent, 'percent': req.percent})
+        raise HTTPException(status_code=400, detail="Percent must be between 1 and 100")
+
+    # Validate amount if provided
+    if req.amount is not None and req.amount <= 0:
+        relay_log('TRANSFER_REJECTED', {'reason': 'invalid_amount', 'from_agent': req.from_agent, 'amount': req.amount})
+        raise HTTPException(status_code=400, detail="Amount must be positive")
+
+    if not AGENT_API_TOKEN:
+        relay_log('TRANSFER_REJECTED', {'reason': 'no_agent_token', 'from_agent': req.from_agent})
+        raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
+
+    relay_log('TRANSFER_REQUESTED', {
+        'from_agent': req.from_agent,
+        'to_agent': req.to_agent,
+        'requester': requester or req.from_agent,
+        'token_mint': req.token_mint,
+        'percent': req.percent,
+        'amount': req.amount,
+    })
+
+    # Build request payload
+    payload = {
+        'to_agent': req.to_agent,
+        'token_mint': req.token_mint,
+        'percent': req.percent,
+    }
+    if req.amount is not None:
+        payload['amount'] = req.amount
+
+    # Forward to SXAN API (localhost — relay runs on the Mac)
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            resp = await client.post(
+                f"{SXAN_API_BASE}/api/agent-wallet/transfer/{req.from_agent}",
+                json=payload,
+                headers={'Authorization': f'Bearer {AGENT_API_TOKEN}'},
+            )
+
+        result = resp.json() if resp.status_code == 200 else {'error': resp.text}
+
+        relay_log('TRANSFER_RESULT', {
+            'from_agent': req.from_agent,
+            'to_agent': req.to_agent,
+            'status_code': resp.status_code,
+            'signature': result.get('signature', 'none'),
+        })
+
+        if resp.status_code == 200:
+            return result
+        else:
+            return JSONResponse(status_code=resp.status_code, content=result)
+
+    except Exception as e:
+        relay_log('TRANSFER_ERROR', {'from_agent': req.from_agent, 'to_agent': req.to_agent, 'error': str(e)})
         return JSONResponse(status_code=502, content={'error': f'SXAN API unreachable: {str(e)}'})
 
 
@@ -739,6 +836,89 @@ async def get_activity(authorization: str = Header(), limit: int = 5):
         return entries[-limit:]
     except IOError:
         return []
+
+
+# --- Vessel State (trade manager assignment) ---
+
+@app.get("/trade-manager")
+async def get_trade_manager(authorization: str = Header()):
+    """
+    Get current trade manager assignment.
+    Returns who receives positions after MsWednesday buys.
+    """
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    if not VESSEL_STATE_FILE.exists():
+        return {'trade_manager': None, 'error': 'No vessel state configured'}
+
+    try:
+        with open(VESSEL_STATE_FILE) as f:
+            state = json.load(f)
+        return {
+            'trade_manager': state.get('trade_manager'),
+            'updated_at': state.get('updated_at'),
+            'updated_by': state.get('updated_by'),
+        }
+    except (json.JSONDecodeError, IOError) as e:
+        return JSONResponse(status_code=500, content={'error': str(e)})
+
+
+class SetTradeManagerRequest(BaseModel):
+    agent_name: str
+
+
+@app.post("/trade-manager")
+async def set_trade_manager(req: SetTradeManagerRequest, request: Request, authorization: str = Header()):
+    """
+    Set current trade manager.
+    Only whitelisted agents can be assigned as trade manager.
+    """
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    requester = get_requester(request)
+
+    if req.agent_name not in AGENT_WHITELIST:
+        relay_log('SET_TRADE_MANAGER_REJECTED', {'reason': 'invalid_agent', 'agent_name': req.agent_name[:50]})
+        raise HTTPException(status_code=403, detail=f"Agent '{req.agent_name}' not in whitelist")
+
+    # Read existing state
+    state = {}
+    if VESSEL_STATE_FILE.exists():
+        try:
+            with open(VESSEL_STATE_FILE) as f:
+                state = json.load(f)
+        except (json.JSONDecodeError, IOError):
+            pass
+
+    old_manager = state.get('trade_manager')
+    state['trade_manager'] = req.agent_name
+    state['updated_at'] = datetime.utcnow().isoformat() + 'Z'
+    state['updated_by'] = requester or 'unknown'
+
+    # Atomic write
+    import tempfile
+    try:
+        fd, tmp_path = tempfile.mkstemp(dir=PROJECT_ROOT, suffix='.json')
+        with os.fdopen(fd, 'w') as f:
+            json.dump(state, f, indent=2)
+        os.replace(tmp_path, VESSEL_STATE_FILE)
+    except Exception as e:
+        relay_log('SET_TRADE_MANAGER_ERROR', {'error': str(e)})
+        return JSONResponse(status_code=500, content={'error': str(e)})
+
+    relay_log('TRADE_MANAGER_CHANGED', {
+        'old_manager': old_manager,
+        'new_manager': req.agent_name,
+        'requester': requester,
+    })
+
+    return {
+        'success': True,
+        'trade_manager': req.agent_name,
+        'previous': old_manager,
+    }
 
 
 @app.get("/feeds/launches")
