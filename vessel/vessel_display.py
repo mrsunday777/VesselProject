@@ -520,7 +520,7 @@ def run_display(server_ip, refresh):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='VesselProject Phone Display')
-    parser.add_argument('--server', default=os.getenv('VESSEL_SERVER_IP', '192.168.1.146'),
+    parser.add_argument('--server', default=os.getenv('VESSEL_SERVER_IP', '100.78.3.119'),
                         help='Relay server IP (default: 192.168.1.146)')
     parser.add_argument('--refresh', type=float, default=0.5,
                         help='Display refresh interval in seconds (default: 0.5)')

@@ -59,7 +59,7 @@ from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 
 # Default relay server (Mac IP on home network)
-DEFAULT_SERVER_IP = os.getenv('VESSEL_SERVER_IP', '192.168.1.146')
+DEFAULT_SERVER_IP = os.getenv('VESSEL_SERVER_IP', '100.78.3.119')
 
 
 class VesselTools:

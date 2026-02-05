@@ -20,7 +20,7 @@ from executor import execute_task
 # Server URL - set via env var (your computer's IP or a deployed server)
 # Default to 192.168.1.146 (Brandon's desktop on home network)
 # Override with: export VESSEL_SERVER_URL=ws://your-ip:8777
-DEFAULT_SERVER_IP = "192.168.1.146"
+DEFAULT_SERVER_IP = "100.78.3.119"
 SERVER_URL = os.getenv("VESSEL_SERVER_URL", f"ws://{DEFAULT_SERVER_IP}:{SERVER_PORT}")
 
 RECONNECT_DELAY = 5      # seconds between reconnect attempts
