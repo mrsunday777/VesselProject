@@ -247,8 +247,17 @@ class VesselTools:
                 'transfer': None,
             }
 
-        # Step 2: Transfer 100% to managing agent
-        transfer_result = self.transfer(token_mint, to_agent, percent=100, from_agent=agent_name)
+        # Step 2: Transfer 100% to managing agent (retry — RPC needs time to index new balance)
+        transfer_result = None
+        for attempt in range(4):
+            if attempt > 0:
+                time.sleep(3)
+            transfer_result = self.transfer(token_mint, to_agent, percent=100, from_agent=agent_name)
+            if transfer_result.get('success'):
+                break
+            err = str(transfer_result.get('error', ''))
+            if 'balance' not in err.lower() and 'not found' not in err.lower():
+                break  # Non-balance error, don't retry
 
         result = {
             'success': transfer_result.get('success', False),
@@ -640,8 +649,18 @@ class VesselTools:
                 'assignment': None,
             }
 
-        # Step 3: Transfer tokens to agent
-        transfer_result = self.transfer(token_mint, agent_name, percent=100, from_agent=buyer)
+        # Step 3: Transfer tokens to agent (retry — RPC needs time to index new balance)
+        transfer_result = None
+        for attempt in range(4):
+            if attempt > 0:
+                time.sleep(3)
+            transfer_result = self.transfer(token_mint, agent_name, percent=100, from_agent=buyer)
+            if transfer_result.get('success'):
+                break
+            err = str(transfer_result.get('error', ''))
+            if 'balance' not in err.lower() and 'not found' not in err.lower():
+                break  # Non-balance error, don't retry
+
         if not transfer_result.get('success'):
             return {
                 'success': False,
