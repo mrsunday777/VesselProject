@@ -193,11 +193,13 @@ def activity_color(action):
         return Term.YELLOW
     if 'TRANSFER' in action:
         return Term.MAGENTA
+    if 'ASSIGN' in action or 'RELEASE' in action or 'CHECKIN' in action:
+        return Term.CYAN
     if 'TRADE_MANAGER' in action:
         return Term.BRIGHT_CYAN
     if 'NOTIFY' in action:
         return Term.BRIGHT_CYAN
-    if 'ERROR' in action or 'REJECTED' in action:
+    if 'ERROR' in action or 'REJECTED' in action or 'TIMEOUT' in action:
         return Term.BRIGHT_RED
     if 'WALLET_STATUS' in action or 'TRANSACTIONS' in action or 'POSITIONS' in action:
         return Term.DIM
@@ -243,6 +245,16 @@ ACTION_LABELS = {
     'FEED_LAUNCHES_ERROR': None,
     'FEED_CATALYSTS': 'SCAN CAT',
     'FEED_CATALYSTS_ERROR': None,
+    # Agent availability (isolation model)
+    'AGENT_ASSIGNED': 'ASSIGNED',
+    'ASSIGN_REJECTED': 'ASSIGN DENIED',
+    'AGENT_RELEASED': 'RELEASED',
+    'MANAGER_CHECKIN': 'CHECKIN',
+    'MANAGER_TIMEOUT': 'MGR TIMEOUT',
+    'TRANSFER_SOL_REQUESTED': 'SOL XFER',
+    'TRANSFER_SOL_RESULT': None,
+    'TRANSFER_SOL_ERROR': 'SOL XFER ERR',
+    'TRANSFER_SOL_REJECTED': 'SOL DENIED',
 }
 
 
@@ -288,10 +300,31 @@ def render_activity_panel(activity, rows, cols):
             time_str = '??:??'
 
         # Build detail snippet based on action type
-        # Use 'requester' for WHO did it, 'agent_name' for WHICH wallet
-        who = entry.get('requester') or entry.get('agent_name') or entry.get('from_agent', '')
+        # Use 'requester' for WHO did it, 'agent_name'/'agent' for WHICH wallet
+        who = entry.get('requester') or entry.get('agent_name') or entry.get('agent') or entry.get('from_agent', '')
         detail = ''
-        if 'old_manager' in entry:
+        if 'agent' in entry and action in ('AGENT_ASSIGNED', 'ASSIGN_REJECTED', 'AGENT_RELEASED', 'MANAGER_CHECKIN', 'MANAGER_TIMEOUT'):
+            # Isolation model actions
+            ag = entry.get('agent', '?')
+            atype = entry.get('type', entry.get('old_type', ''))
+            pos = entry.get('position') or entry.get('old_position', '')
+            reason = entry.get('reason', '')
+            if action == 'AGENT_ASSIGNED':
+                pos_short = f" {pos[:6]}..{pos[-3:]}" if pos and len(pos) > 9 else (f" {pos}" if pos else '')
+                detail = f"{ag} ({atype}){pos_short}"
+            elif action == 'ASSIGN_REJECTED':
+                detail = f"{ag} ({reason})" if reason else ag
+            elif action == 'AGENT_RELEASED':
+                pos_short = f" from {pos[:6]}..{pos[-3:]}" if pos and len(pos) > 9 else ''
+                detail = f"{ag}{pos_short}"
+            elif action == 'MANAGER_CHECKIN':
+                detail = ag
+            elif action == 'MANAGER_TIMEOUT':
+                hrs = entry.get('elapsed_hours', '?')
+                detail = f"{ag} ({hrs}h)"
+            else:
+                detail = ag
+        elif 'old_manager' in entry:
             # Trade manager change
             old = entry.get('old_manager', '?')
             new = entry.get('new_manager', '?')
@@ -491,8 +524,8 @@ def run_display(server_ip, refresh):
                     a = entry.get('requester') or entry.get('agent_name', '')
                     if a in agent_names:
                         active_agents.add(a)
-                    # Check transfer and trade manager fields
-                    for field in ('from_agent', 'to_agent', 'new_manager', 'old_manager'):
+                    # Check transfer, trade manager, and availability fields
+                    for field in ('from_agent', 'to_agent', 'new_manager', 'old_manager', 'agent'):
                         val = entry.get(field, '')
                         if val in agent_names:
                             active_agents.add(val)
