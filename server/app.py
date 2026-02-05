@@ -140,10 +140,13 @@ def _verify_agent_gate(agent_name: str) -> bool:
 async def _gate_check_or_403(agent_name: str, action: str, requester: str = None):
     """
     Check spawn gate for agent. Raises 403 + notifies Brandon if unauthorized.
-    MsWednesday is exempt. Called at the top of trade-executing endpoints.
+    MsWednesday is exempt — both as target agent AND as requester (apex authority).
+    Called at the top of trade-executing endpoints.
     """
     if agent_name == 'MsWednesday':
         return  # Always allowed
+    if requester == 'MsWednesday':
+        return  # Apex authority can operate on any agent's wallet
 
     if not _verify_agent_gate(agent_name):
         relay_log(f'{action}_GATE_DENIED', {
