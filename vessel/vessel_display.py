@@ -191,6 +191,10 @@ def activity_color(action):
         return Term.BRIGHT_GREEN
     if 'SELL' in action:
         return Term.YELLOW
+    if 'TRANSFER' in action:
+        return Term.MAGENTA
+    if 'TRADE_MANAGER' in action:
+        return Term.BRIGHT_CYAN
     if 'NOTIFY' in action:
         return Term.BRIGHT_CYAN
     if 'ERROR' in action or 'REJECTED' in action:
@@ -211,6 +215,13 @@ ACTION_LABELS = {
     'SELL_RESULT': None,       # skip
     'SELL_ERROR': 'SELL ERR',
     'SELL_REJECTED': 'SELL DENIED',
+    'TRANSFER_REQUESTED': 'TRANSFER',
+    'TRANSFER_RESULT': None,   # skip
+    'TRANSFER_ERROR': 'XFER ERR',
+    'TRANSFER_REJECTED': 'XFER DENIED',
+    'TRADE_MANAGER_CHANGED': 'MGR CHANGE',
+    'SET_TRADE_MANAGER_REJECTED': None,
+    'SET_TRADE_MANAGER_ERROR': None,
     'WALLET_STATUS': 'STATUS',
     'WALLET_STATUS_ERROR': None,
     'WALLET_STATUS_REJECTED': None,
@@ -223,6 +234,7 @@ ACTION_LABELS = {
     'NOTIFY_REQUESTED': 'NOTIFY',
     'NOTIFY_RESULT': None,     # skip
     'NOTIFY_ERROR': 'NOTIFY ERR',
+    'NOTIFY_REJECTED': None,
     'FEED_TELEGRAM': 'SCAN TG',
     'FEED_TELEGRAM_ERROR': None,
     'FEED_GRADUATING': 'SCAN GRAD',
@@ -276,9 +288,25 @@ def render_activity_panel(activity, rows, cols):
 
         # Build detail snippet based on action type
         # Use 'requester' for WHO did it, 'agent_name' for WHICH wallet
-        who = entry.get('requester') or entry.get('agent_name', '')
+        who = entry.get('requester') or entry.get('agent_name') or entry.get('from_agent', '')
         detail = ''
-        if 'title' in entry:
+        if 'old_manager' in entry:
+            # Trade manager change
+            old = entry.get('old_manager', '?')
+            new = entry.get('new_manager', '?')
+            by = entry.get('requester', '')
+            by_tag = f" by {by}" if by else ''
+            detail = f"{old} -> {new}{by_tag}"
+        elif 'from_agent' in entry and 'to_agent' in entry:
+            # Transfer
+            mint = entry.get('token_mint', entry.get('mint', ''))
+            mint_short = f" {mint[:6]}..{mint[-3:]}" if mint else ''
+            detail = f"{entry['from_agent']} -> {entry['to_agent']}{mint_short}"
+        elif 'from_agent' in entry:
+            # Transfer rejection
+            reason = entry.get('reason', '')
+            detail = f"{entry['from_agent']} ({reason})" if reason else entry['from_agent']
+        elif 'title' in entry:
             req_tag = f"[{who}] " if who else ''
             detail = f'{req_tag}"{entry["title"][:25]}"'
         elif 'agent_name' in entry:
@@ -462,6 +490,11 @@ def run_display(server_ip, refresh):
                     a = entry.get('requester') or entry.get('agent_name', '')
                     if a in agent_names:
                         active_agents.add(a)
+                    # Check transfer and trade manager fields
+                    for field in ('from_agent', 'to_agent', 'new_manager', 'old_manager'):
+                        val = entry.get(field, '')
+                        if val in agent_names:
+                            active_agents.add(val)
                     # Check title field for agent names (notifications)
                     title = entry.get('title', '')
                     for name in agent_names:
