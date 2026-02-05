@@ -21,6 +21,7 @@ from pydantic import BaseModel
 from typing import Optional
 from fastapi import Request
 
+import hmac as hmac_mod
 import httpx
 
 # Import config from parent directory (absolute path to handle any working dir)
@@ -28,6 +29,146 @@ import sys
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
 from config import SERVER_HOST, SERVER_PORT, VESSEL_SECRET
+
+
+# --- Spawn Gate Enforcement ---
+# Inline HMAC verification (no imports from MsWednesday dir).
+# Checks .spawn_gate files before allowing trade-executing endpoints.
+# MsWednesday is exempt (she's the spawn authority).
+
+SPAWN_SECRET_PATH = Path.home() / 'Desktop' / 'MsWednesday' / '.spawn_secret'
+AGENT_GATE_WORKSPACES = {
+    'MsSunday': Path.home() / 'Desktop' / 'MsSunday',
+    'cp1': Path.home() / 'Desktop' / 'cp1',
+    'CP9': Path.home() / 'Desktop' / 'CP9',
+    'cp0': Path.home() / 'Desktop' / 'cp0',
+    'CP0': Path.home() / 'Desktop' / 'cp0',  # alias
+    'CP1': Path.home() / 'Desktop' / 'cp1',  # alias
+}
+
+# Cache: agent_name -> (valid_until_epoch, is_authorized, gate_mtime)
+_gate_cache: dict = {}
+_GATE_CACHE_TTL = 60  # seconds
+
+_spawn_secret: bytes = b''
+try:
+    if SPAWN_SECRET_PATH.exists():
+        _spawn_secret = SPAWN_SECRET_PATH.read_text().strip().encode()
+        print(f"[server] Spawn secret loaded ({len(_spawn_secret)} bytes)")
+    else:
+        print("[server] WARNING: .spawn_secret not found — gate enforcement disabled")
+except Exception as e:
+    print(f"[server] WARNING: Failed to load .spawn_secret: {e}")
+
+
+def _verify_agent_gate(agent_name: str) -> bool:
+    """
+    Verify an agent has a valid HMAC-signed spawn gate.
+    Returns True if authorized, False if not.
+    MsWednesday is always exempt.
+    Results cached for 60s, invalidated on gate file mtime change.
+    """
+    # MsWednesday is the spawn authority — always exempt
+    if agent_name == 'MsWednesday':
+        return True
+
+    # If spawn secret not loaded, we can't verify — fail open with warning
+    if not _spawn_secret:
+        print(f"[gate] WARNING: No spawn secret, cannot verify {agent_name}")
+        return True  # Fail open if no secret (relay shouldn't block if misconfigured)
+
+    workspace = AGENT_GATE_WORKSPACES.get(agent_name)
+    if not workspace:
+        return False  # Unknown agent — not gated, but also not in whitelist
+
+    gate_file = workspace / '.spawn_gate'
+
+    # Check cache
+    now = time.time()
+    cached = _gate_cache.get(agent_name)
+    if cached:
+        valid_until, authorized, cached_mtime = cached
+        if now < valid_until:
+            # Check if gate file changed
+            try:
+                current_mtime = gate_file.stat().st_mtime if gate_file.exists() else 0
+            except OSError:
+                current_mtime = 0
+            if current_mtime == cached_mtime:
+                return authorized
+
+    # Full verification
+    gate_mtime = 0
+    try:
+        if not gate_file.exists():
+            _gate_cache[agent_name] = (now + _GATE_CACHE_TTL, False, 0)
+            return False
+
+        gate_mtime = gate_file.stat().st_mtime
+
+        with open(gate_file) as f:
+            data = json.load(f)
+
+        required = ['authorized_by', 'agent', 'timestamp', 'expires_at', 'signature']
+        for field in required:
+            if field not in data:
+                _gate_cache[agent_name] = (now + _GATE_CACHE_TTL, False, gate_mtime)
+                return False
+
+        if data['authorized_by'] != 'MsWednesday':
+            _gate_cache[agent_name] = (now + _GATE_CACHE_TTL, False, gate_mtime)
+            return False
+
+        expires = datetime.fromisoformat(data['expires_at'])
+        if datetime.now() > expires:
+            _gate_cache[agent_name] = (now + _GATE_CACHE_TTL, False, gate_mtime)
+            return False
+
+        message = f"{data['agent']}|{data['timestamp']}|{data['expires_at']}"
+        expected_sig = hmac_mod.new(_spawn_secret, message.encode(), hashlib.sha256).hexdigest()
+        authorized = hmac_mod.compare_digest(data['signature'], expected_sig)
+
+        _gate_cache[agent_name] = (now + _GATE_CACHE_TTL, authorized, gate_mtime)
+        return authorized
+
+    except Exception as e:
+        print(f"[gate] Error verifying {agent_name}: {e}")
+        _gate_cache[agent_name] = (now + _GATE_CACHE_TTL, False, gate_mtime)
+        return False
+
+
+async def _gate_check_or_403(agent_name: str, action: str, requester: str = None):
+    """
+    Check spawn gate for agent. Raises 403 + notifies Brandon if unauthorized.
+    MsWednesday is exempt. Called at the top of trade-executing endpoints.
+    """
+    if agent_name == 'MsWednesday':
+        return  # Always allowed
+
+    if not _verify_agent_gate(agent_name):
+        relay_log(f'{action}_GATE_DENIED', {
+            'agent_name': agent_name,
+            'requester': requester or agent_name,
+            'reason': 'no_valid_spawn_gate',
+        })
+        # Async notify Brandon
+        try:
+            async with httpx.AsyncClient(timeout=5) as client:
+                if AGENT_API_TOKEN:
+                    await client.post(
+                        f"{SXAN_API_BASE}/api/notify",
+                        json={
+                            'user_id': '6265463172',
+                            'message': f"**GATE DENIED: {agent_name}**\n\nAttempted {action} without valid spawn gate.\nRequester: {requester or agent_name}\nTime: {datetime.now().isoformat()}",
+                        },
+                        headers={'Authorization': f'Bearer {AGENT_API_TOKEN}'},
+                    )
+        except Exception:
+            pass
+        raise HTTPException(
+            status_code=403,
+            detail=f"Agent '{agent_name}' has no valid spawn gate. Trade operations require MsWednesday authorization."
+        )
 
 # Position state file (written by vessel_monitor_service on this machine)
 POSITION_STATE_FILE = Path.home() / 'position_state.json'
@@ -40,6 +181,10 @@ AGENT_AVAILABILITY_FILE = Path(PROJECT_ROOT) / 'agent_availability.json'
 
 # Manager timeout: auto-release after 5 hours with no check-in
 MANAGER_TIMEOUT_HOURS = 5
+
+# --- Automated Capital Flow Constants ---
+AGENT_GAS_SOL = 0.01       # SOL sent to agent for gas on entry
+MIN_RETURNABLE = 0.002     # Minimum SOL worth auto-returning
 
 # SXAN Dashboard (local to this machine — never exposed to phone directly)
 SXAN_API_BASE = "http://localhost:5001"
@@ -310,6 +455,149 @@ async def _manager_timeout_loop():
             print(f"[server] Manager timeout check error: {e}")
 
 
+# --- Automated Capital Flow Helpers ---
+# After a sell, auto-return SOL proceeds to MsWednesday.
+# On final sell (no tokens left), return ALL SOL and release agent.
+
+async def _get_agent_holdings(agent_name: str) -> dict:
+    """Check agent wallet status (SOL balance + token holdings)."""
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get(
+                f"{SXAN_API_BASE}/api/agent-wallet/status/{agent_name}",
+                headers={'Authorization': f'Bearer {AGENT_API_TOKEN}'},
+            )
+        if resp.status_code == 200:
+            return resp.json()
+        return {'success': False, 'error': resp.text}
+    except Exception as e:
+        print(f"[capital-flow] Error checking holdings for {agent_name}: {e}")
+        return {'success': False, 'error': str(e)}
+
+
+async def _auto_return_sol(from_agent: str, to_agent: str, amount_sol: float = None):
+    """
+    Transfer SOL back to apex wallet.
+    amount_sol=None → transfer all minus 0.005 buffer.
+    """
+    payload = {'to_agent': to_agent}
+    if amount_sol is not None:
+        payload['amount_sol'] = amount_sol
+
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(
+                f"{SXAN_API_BASE}/api/agent-wallet/transfer-sol/{from_agent}",
+                json=payload,
+                headers={'Authorization': f'Bearer {AGENT_API_TOKEN}'},
+            )
+        result = resp.json() if resp.status_code == 200 else {'success': False, 'error': resp.text}
+        if result.get('success'):
+            relay_log('AUTO_RETURN_SOL', {
+                'from_agent': from_agent,
+                'to_agent': to_agent,
+                'amount_sol': amount_sol or 'ALL',
+                'signature': result.get('signature', 'none'),
+            })
+        else:
+            relay_log('AUTO_RETURN_SOL_FAILED', {
+                'from_agent': from_agent,
+                'to_agent': to_agent,
+                'error': result.get('error', 'unknown'),
+            })
+        return result
+    except Exception as e:
+        relay_log('AUTO_RETURN_SOL_ERROR', {'from_agent': from_agent, 'error': str(e)})
+        return {'success': False, 'error': str(e)}
+
+
+async def _auto_release_agent(agent_name: str):
+    """Release agent to idle after final sell (no tokens remaining)."""
+    try:
+        state = _read_availability()
+        agents = state.get('agents', {})
+        if agent_name in agents:
+            agents[agent_name]['status'] = 'idle'
+            agents[agent_name]['position'] = None
+            agents[agent_name]['assigned_at'] = None
+            agents[agent_name]['type'] = None
+            agents[agent_name]['last_checkin'] = None
+            _write_availability(state)
+            relay_log('AUTO_RELEASE_AGENT', {'agent': agent_name, 'reason': 'no_tokens_remaining'})
+            return True
+    except Exception as e:
+        relay_log('AUTO_RELEASE_ERROR', {'agent': agent_name, 'error': str(e)})
+    return False
+
+
+async def _notify_brandon(message: str):
+    """Send notification to Brandon via SXAN dashboard."""
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            await client.post(
+                f"{SXAN_API_BASE}/api/notify",
+                json={'user_id': '6265463172', 'message': message},
+                headers={'Authorization': f'Bearer {AGENT_API_TOKEN}'},
+            )
+    except Exception:
+        pass
+
+
+async def _handle_post_sell_capital_flow(agent_name: str):
+    """
+    Called after a successful sell. Handles automated capital return.
+
+    Logic:
+    - If agent still has tokens: return SOL above gas reserve (keep 0.01 for next sell)
+    - If agent has no tokens: return ALL SOL and auto-release agent
+    - MsWednesday exempt (she IS the apex wallet)
+    """
+    if agent_name == 'MsWednesday':
+        return  # Apex wallet — no auto-return
+
+    if not AGENT_API_TOKEN:
+        return  # Can't make API calls without token
+
+    # Check what agent still holds
+    holdings = await _get_agent_holdings(agent_name)
+    if not holdings.get('success'):
+        print(f"[capital-flow] Could not check holdings for {agent_name}, skipping auto-return")
+        return
+
+    tokens = holdings.get('tokens', [])
+    has_tokens = any(t.get('ui_amount', 0) > 0 for t in tokens)
+    sol_balance = holdings.get('sol_balance', 0)
+
+    if has_tokens:
+        # Partial sell — keep gas, return the rest
+        returnable = sol_balance - AGENT_GAS_SOL - 0.002  # keep gas + tx fee buffer
+        if returnable > MIN_RETURNABLE:
+            result = await _auto_return_sol(agent_name, 'MsWednesday', amount_sol=round(returnable, 9))
+            if result.get('success'):
+                await _notify_brandon(
+                    f"**Auto-Return (partial)**: {agent_name} → MsWednesday\n"
+                    f"Returned: {returnable:.6f} SOL\n"
+                    f"Agent keeps {AGENT_GAS_SOL} SOL gas + tokens"
+                )
+    else:
+        # Final sell — no tokens left, return EVERYTHING and release
+        if sol_balance > MIN_RETURNABLE:
+            result = await _auto_return_sol(agent_name, 'MsWednesday')  # None = all minus buffer
+            if result.get('success'):
+                await _notify_brandon(
+                    f"**Auto-Return (final)**: {agent_name} → MsWednesday\n"
+                    f"All SOL returned. Position fully closed."
+                )
+
+        # Release agent to idle regardless of transfer success
+        released = await _auto_release_agent(agent_name)
+        if released:
+            await _notify_brandon(
+                f"**Agent Released**: {agent_name}\n"
+                f"No tokens remaining. Agent returned to idle pool."
+            )
+
+
 # --- REST endpoints (for MsWednesday to submit tasks) ---
 
 @app.post("/task", response_model=TaskResponse)
@@ -473,6 +761,9 @@ async def relay_sell(req: SellRequest, request: Request, authorization: str = He
         relay_log('SELL_REJECTED', {'reason': 'no_agent_token', 'agent': req.agent_name})
         raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
 
+    # Spawn gate check — agent must have valid HMAC gate to execute trades
+    await _gate_check_or_403(req.agent_name, 'SELL', requester)
+
     relay_log('SELL_REQUESTED', {
         'agent_name': req.agent_name,
         'requester': requester or req.agent_name,
@@ -502,6 +793,10 @@ async def relay_sell(req: SellRequest, request: Request, authorization: str = He
             'status_code': resp.status_code,
             'signature': result.get('signature', 'none'),
         })
+
+        # Automated capital flow: return SOL proceeds after successful sell
+        if resp.status_code == 200 and result.get('success'):
+            asyncio.create_task(_handle_post_sell_capital_flow(req.agent_name))
 
         if resp.status_code == 200:
             return result
@@ -548,6 +843,9 @@ async def relay_buy(req: BuyRequest, request: Request, authorization: str = Head
     if not AGENT_API_TOKEN:
         relay_log('BUY_REJECTED', {'reason': 'no_agent_token', 'agent': req.agent_name})
         raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
+
+    # Spawn gate check — agent must have valid HMAC gate to execute trades
+    await _gate_check_or_403(req.agent_name, 'BUY', requester)
 
     relay_log('BUY_REQUESTED', {
         'agent_name': req.agent_name,
@@ -627,6 +925,9 @@ async def relay_transfer(req: TransferRequest, request: Request, authorization: 
     if not AGENT_API_TOKEN:
         relay_log('TRANSFER_REJECTED', {'reason': 'no_agent_token', 'from_agent': req.from_agent})
         raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
+
+    # Spawn gate check — agent initiating transfer must have valid gate
+    await _gate_check_or_403(req.from_agent, 'TRANSFER', requester)
 
     relay_log('TRANSFER_REQUESTED', {
         'from_agent': req.from_agent,
@@ -1243,6 +1544,9 @@ async def relay_transfer_sol(req: TransferSolRequest, request: Request, authoriz
 
     if not AGENT_API_TOKEN:
         raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
+
+    # Spawn gate check — agent initiating SOL transfer must have valid gate
+    await _gate_check_or_403(req.from_agent, 'TRANSFER_SOL', requester)
 
     relay_log('TRANSFER_SOL_REQUESTED', {
         'from_agent': req.from_agent,

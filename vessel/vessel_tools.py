@@ -621,7 +621,10 @@ class VesselTools:
                 'assignment': None,
             }
 
-        # Step 4: Mark agent as busy
+        # Step 4: Send gas SOL to agent (0.01 SOL so they can execute sells)
+        gas_result = self.transfer_sol(agent_name, amount_sol=0.01, from_agent=buyer)
+
+        # Step 5: Mark agent as busy
         assign_result = self.assign_agent(agent_name, token_mint, "trader")
 
         result = {
@@ -629,6 +632,7 @@ class VesselTools:
             'agent': agent_name,
             'buy': buy_result,
             'transfer': transfer_result,
+            'gas_sent': gas_result,
             'assignment': assign_result,
         }
 
