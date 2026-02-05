@@ -546,13 +546,17 @@ async def _notify_brandon(message: str):
         pass
 
 
-async def _handle_post_sell_capital_flow(agent_name: str):
+DUST_THRESHOLD = 0.003  # SOL needed to execute a sell — tokens stuck below this are dust
+
+async def _handle_post_sell_capital_flow(agent_name: str, sell_percent: int = 100):
     """
     Called after a successful sell. Handles automated capital return.
 
     Logic:
-    - If agent still has tokens: return SOL above gas reserve (keep 0.01 for next sell)
-    - If agent has no tokens: return ALL SOL and auto-release agent
+    - If agent still has meaningful tokens: return SOL above gas reserve (keep 0.01 for next sell)
+    - If agent has no tokens (or only dust): return ALL SOL and auto-release agent
+    - Dust detection: after 100% sell, any remaining tokens are rounding artifacts.
+      Also, tokens are stuck if agent lacks gas to sell them (< 0.003 SOL).
     - MsWednesday exempt (she IS the apex wallet)
     """
     if agent_name == 'MsWednesday':
@@ -568,8 +572,18 @@ async def _handle_post_sell_capital_flow(agent_name: str):
         return
 
     tokens = holdings.get('tokens', [])
-    has_tokens = any(t.get('ui_amount', 0) > 0 for t in tokens)
+    raw_has_tokens = any(t.get('ui_amount', 0) > 0 for t in tokens)
     sol_balance = holdings.get('sol_balance', 0)
+
+    # Dust detection: treat leftover tokens as empty if:
+    # 1) This was a 100% sell (remaining is just rounding artifacts), OR
+    # 2) Agent can't afford gas to sell them (tokens are stuck)
+    if raw_has_tokens and (sell_percent >= 100 or sol_balance < DUST_THRESHOLD):
+        print(f"[capital-flow] {agent_name}: dust detected after {sell_percent}% sell "
+              f"(sol={sol_balance:.6f}, tokens={len(tokens)}). Treating as empty.")
+        has_tokens = False
+    else:
+        has_tokens = raw_has_tokens
 
     if has_tokens:
         # Partial sell — keep gas, return the rest
@@ -799,7 +813,7 @@ async def relay_sell(req: SellRequest, request: Request, authorization: str = He
 
         # Automated capital flow: return SOL proceeds after successful sell
         if resp.status_code == 200 and result.get('success'):
-            asyncio.create_task(_handle_post_sell_capital_flow(req.agent_name))
+            asyncio.create_task(_handle_post_sell_capital_flow(req.agent_name, req.percent))
 
         if resp.status_code == 200:
             return result
