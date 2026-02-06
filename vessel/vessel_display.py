@@ -193,7 +193,7 @@ class Agent:
         self.last_seen = 0
         self.prev_x = self.x
         self.prev_y = self.y
-        self.trail = deque(maxlen=5)
+        self.trail = deque(maxlen=10)
 
     def current_sprite(self):
         if self.active or self.glow > 0:
@@ -241,9 +241,9 @@ class Agent:
             self.trail.append((int(self.prev_x), int(self.prev_y), 0))
 
         # Age all trail entries
-        aged = deque(maxlen=5)
+        aged = deque(maxlen=10)
         for tx, ty, age in self.trail:
-            if age < 5:
+            if age < 10:
                 aged.append((tx, ty, age + 1))
         self.trail = aged
 
@@ -273,16 +273,16 @@ class Particle:
             self.y = max(min_y, min(max_y, self.y))
             self.drift_row_timer = random.randint(5, 10)
 
-        self.twinkle = random.random() < 0.10
+        self.twinkle = random.random() < 0.25
 
 
-def init_particles(cols, min_y, max_y, density=0.025):
-    """Scatter background particles at ~2.5% density."""
+def init_particles(cols, min_y, max_y, density=0.07):
+    """Scatter background particles at ~7% density."""
     particles = []
     area = cols * (max_y - min_y + 1)
     count = int(area * density)
-    chars = ['.', '*']
-    colors = [37, 38, 44, 45]
+    chars = ['.', '+', '*', 'o']
+    colors = [37, 38, 44, 45, 51, 87]
     for _ in range(count):
         x = random.randint(1, cols - 1)
         y = random.randint(min_y, max_y)
@@ -306,7 +306,7 @@ def should_connect(a1, a2, max_dist=30):
 
 def draw_line_between(buf, x0, y0, x1, y1, cols, rows, min_y):
     """Bresenham's line algorithm — dotted, directional chars, dark gray."""
-    style = Term.color256(245)
+    style = Term.color256(39)
     dx = abs(x1 - x0)
     dy = abs(y1 - y0)
     sx = 1 if x0 < x1 else -1
@@ -315,8 +315,8 @@ def draw_line_between(buf, x0, y0, x1, y1, cols, rows, min_y):
     step = 0
 
     while True:
-        # Dotted: draw every other cell
-        if step % 2 == 0:
+        # Draw every cell (solid line)
+        if True:
             if min_y <= y0 < rows and 1 <= x0 < cols:
                 if dx > dy * 2:
                     ch = '-'
@@ -374,16 +374,23 @@ def render_agent_layer(agents, particles, frame, rows, cols, min_y, max_y):
                 cy2 = int(a2.y) + h2 // 2
                 draw_line_between(buf, cx1, cy1, cx2, cy2, cols, rows, min_y)
 
-    # Layer 3: Agent trails (fading dots in agent color)
+    # Layer 3: Agent trails (fading chars in agent color)
     for agent in agents.values():
-        base_color = agent.color_gradient[0]
         for tx, ty, age in agent.trail:
             if min_y <= ty < rows and 1 <= tx < cols:
-                # Fade: more dim as age increases
                 fade_colors = agent.color_gradient
                 cidx = min(age, len(fade_colors) - 1)
-                tstyle = Term.color256(fade_colors[cidx])
-                buf_set(buf, ty, tx, '.', tstyle)
+                # Bright chars for fresh trail, dimmer for old
+                if age < 3:
+                    tch = 'o'
+                    tstyle = Term.BOLD + Term.color256(fade_colors[cidx])
+                elif age < 6:
+                    tch = '+'
+                    tstyle = Term.color256(fade_colors[cidx])
+                else:
+                    tch = '.'
+                    tstyle = Term.color256(fade_colors[0])
+                buf_set(buf, ty, tx, tch, tstyle)
 
     # Layer 4: Agent sprites
     for agent in agents.values():
