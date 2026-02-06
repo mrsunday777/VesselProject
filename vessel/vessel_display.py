@@ -653,15 +653,13 @@ def render_agent_status_panel(agent_avail, activity, rows, cols, agent_sessions=
         line = f"{Term.pos(row, col_start)}{tool_color}{tool_fmt}{Term.RESET} "
 
         if agents_on_tool:
-            parts = []
+            # Show agent names only, no mint details — fits phone width
+            names = []
             for agent_name, detail in agents_on_tool:
                 sprite_def = AGENT_SPRITES.get(agent_name, {})
                 ac = sprite_def.get('fallback_color', Term.WHITE)
-                part = f"{ac}{agent_name}{Term.RESET}"
-                if detail:
-                    part += f" {Term.DIM}{detail}{Term.RESET}"
-                parts.append(part)
-            line += ', '.join(parts)
+                names.append(f"{ac}{agent_name}{Term.RESET}")
+            line += ' '.join(names)
         else:
             line += f"{Term.DIM}--{Term.RESET}"
 
