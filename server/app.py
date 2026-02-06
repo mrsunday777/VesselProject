@@ -211,7 +211,7 @@ RELAY_LOG = Path(PROJECT_ROOT) / 'relay_audit.log'
 SOLANA_ADDR_RE = re.compile(r'^[1-9A-HJ-NP-Za-km-z]{32,44}$')
 
 # Whitelisted agent names (only these agents can trade through the relay)
-AGENT_WHITELIST = {"MsWednesday", "CP0", "CP1", "CP9", "msSunday"}
+AGENT_WHITELIST = {"MsWednesday", "CP0", "CP1", "CP9", "msSunday", "msCounsel"}
 
 # Agent context docs (Mac-side source of truth for agent identity)
 AGENT_CONTEXTS_DIR = Path(PROJECT_ROOT) / 'agent_contexts'
@@ -219,6 +219,9 @@ AGENT_CONTEXTS_DIR = Path(PROJECT_ROOT) / 'agent_contexts'
 # Active agent sessions (relay-side tracking)
 # session_id -> {agent_name, job_type, task_id, started_at, status, ...}
 _agent_sessions: dict = {}
+
+# Compliance audit log file (msCounsel decisions)
+COMPLIANCE_AUDIT_PATH = Path(PROJECT_ROOT) / 'compliance_audit.json'
 
 # MsWednesday wallet (for telegram feed proxy)
 MSWEDNESDAY_WALLET = "J5G2Z5yTgprEiwKEr3NLpKLghAVksez8twitJJwfiYsh"
@@ -1976,7 +1979,7 @@ async def relay_content_queue(authorization: str = Header()):
 
 class SpawnRequest(BaseModel):
     agent_name: str
-    job_type: str = "general"   # scanner, trader, manager, health, content_manager, general
+    job_type: str = "general"   # scanner, trader, manager, health, content_manager, compliance_counsel, general
     prompt: str
     token_mint: Optional[str] = None
     max_turns: int = AGENT_MAX_TURNS
@@ -2073,6 +2076,7 @@ async def spawn_agent(req: SpawnRequest, request: Request, authorization: str = 
         "manager": "manager",
         "health": "manager",
         "content_manager": "content_manager",
+        "compliance_counsel": "manager",
         "general": "trader",
     }
     avail_type = agent_type_map.get(req.job_type, "trader")
@@ -2292,6 +2296,161 @@ async def kill_agent_session(session_id: str, request: Request, authorization: s
         "agent_name": agent_name,
         "status": "killed",
     }
+
+
+# --- Compliance Audit (msCounsel) ---
+
+
+def _read_compliance_log() -> list:
+    """Read compliance audit entries."""
+    if not COMPLIANCE_AUDIT_PATH.exists():
+        return []
+    try:
+        return json.loads(COMPLIANCE_AUDIT_PATH.read_text())
+    except (json.JSONDecodeError, IOError):
+        return []
+
+
+def _write_compliance_log(entries: list):
+    """Atomic write compliance audit log."""
+    import tempfile
+    fd, tmp_path = tempfile.mkstemp(dir=str(COMPLIANCE_AUDIT_PATH.parent), suffix='.tmp')
+    try:
+        with os.fdopen(fd, 'w') as f:
+            json.dump(entries, f, indent=2)
+        os.replace(tmp_path, str(COMPLIANCE_AUDIT_PATH))
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+        raise
+
+
+class ComplianceEntry(BaseModel):
+    question: str
+    decision: str           # COMPLIANT, NOT_COMPLIANT, GRAY_ZONE
+    reasoning: str
+    jurisdiction: str = "US"
+    reference: str = ""
+    human_review_required: bool = False
+    requested_by: str = ""
+    next_action: str = ""
+
+
+@app.post("/compliance/log")
+async def post_compliance_entry(entry: ComplianceEntry, request: Request, authorization: str = Header()):
+    """
+    Store a compliance audit decision. Used by msCounsel to log rulings.
+    """
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    requester = get_requester(request)
+
+    # Generate audit ID
+    now = datetime.utcnow()
+    audit_id = f"COUNSEL-{now.strftime('%Y%m%d')}-{now.strftime('%H%M%S')}"
+
+    record = {
+        "audit_id": audit_id,
+        "timestamp": now.isoformat() + "Z",
+        "question": entry.question,
+        "decision": entry.decision,
+        "reasoning": entry.reasoning,
+        "jurisdiction": entry.jurisdiction,
+        "reference": entry.reference,
+        "human_review_required": entry.human_review_required,
+        "requested_by": entry.requested_by or requester,
+        "next_action": entry.next_action,
+        "logged_by": requester,
+    }
+
+    entries = _read_compliance_log()
+    entries.append(record)
+    _write_compliance_log(entries)
+
+    relay_log("COMPLIANCE_DECISION", {
+        "audit_id": audit_id,
+        "decision": entry.decision,
+        "question_preview": entry.question[:100],
+        "logged_by": requester,
+    })
+
+    return {"success": True, "audit_id": audit_id, "record": record}
+
+
+@app.get("/compliance/log")
+async def get_compliance_log(
+    authorization: str = Header(),
+    limit: int = 50,
+    decision: Optional[str] = None,
+):
+    """
+    Read compliance audit entries. Filterable by decision type.
+    """
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    entries = _read_compliance_log()
+
+    # Filter by decision type if specified
+    if decision:
+        entries = [e for e in entries if e.get("decision") == decision]
+
+    # Return most recent first, limited
+    entries = list(reversed(entries))[:limit]
+
+    return {"entries": entries, "total": len(entries)}
+
+
+@app.get("/compliance/report")
+async def get_compliance_report(authorization: str = Header()):
+    """
+    Generate compliance summary report (for msCounsel weekly reports).
+    """
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    entries = _read_compliance_log()
+    total = len(entries)
+
+    # Count by decision type
+    compliant = sum(1 for e in entries if e.get("decision") == "COMPLIANT")
+    not_compliant = sum(1 for e in entries if e.get("decision") == "NOT_COMPLIANT")
+    gray_zone = sum(1 for e in entries if e.get("decision") == "GRAY_ZONE")
+    human_review = sum(1 for e in entries if e.get("human_review_required"))
+
+    # Recent entries (last 7 days)
+    week_ago = time.time() - (7 * 86400)
+    recent = [e for e in entries if _parse_timestamp(e.get("timestamp", "")) > week_ago]
+    recent_total = len(recent)
+    recent_compliant = sum(1 for e in recent if e.get("decision") == "COMPLIANT")
+    recent_not_compliant = sum(1 for e in recent if e.get("decision") == "NOT_COMPLIANT")
+    recent_gray = sum(1 for e in recent if e.get("decision") == "GRAY_ZONE")
+
+    return {
+        "all_time": {
+            "total": total,
+            "compliant": compliant,
+            "not_compliant": not_compliant,
+            "gray_zone": gray_zone,
+            "human_review_required": human_review,
+        },
+        "last_7_days": {
+            "total": recent_total,
+            "compliant": recent_compliant,
+            "not_compliant": recent_not_compliant,
+            "gray_zone": recent_gray,
+        },
+        "generated_at": datetime.utcnow().isoformat() + "Z",
+    }
+
+
+def _parse_timestamp(ts: str) -> float:
+    """Parse ISO timestamp to epoch seconds."""
+    try:
+        return datetime.fromisoformat(ts.rstrip("Z")).timestamp()
+    except (ValueError, AttributeError):
+        return 0
 
 
 # --- WebSocket (for vessel to connect and receive tasks) ---

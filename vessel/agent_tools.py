@@ -301,6 +301,78 @@ VESSEL_TOOL_DEFINITIONS = [
             "required": ["seconds"],
         },
     },
+    # --- Compliance Tools (msCounsel) ---
+    {
+        "name": "compliance_check",
+        "description": "Log a compliance ruling. Use this to record every decision with structured audit data. Decision must be COMPLIANT, NOT_COMPLIANT, or GRAY_ZONE.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "question": {
+                    "type": "string",
+                    "description": "The compliance question being evaluated (e.g. 'Can we hold SOL in Vessel Labs wallet?')",
+                },
+                "decision": {
+                    "type": "string",
+                    "description": "Ruling: COMPLIANT, NOT_COMPLIANT, or GRAY_ZONE",
+                    "enum": ["COMPLIANT", "NOT_COMPLIANT", "GRAY_ZONE"],
+                },
+                "reasoning": {
+                    "type": "string",
+                    "description": "Specific legal basis from compliance foundation or regulatory docs",
+                },
+                "jurisdiction": {
+                    "type": "string",
+                    "description": "Primary jurisdiction (US, EU, Singapore, Multi)",
+                    "default": "US",
+                },
+                "reference": {
+                    "type": "string",
+                    "description": "Which section of compliance foundation or regulation applies",
+                },
+                "human_review_required": {
+                    "type": "boolean",
+                    "description": "Whether Brandon/legal team should review before proceeding",
+                    "default": False,
+                },
+                "requested_by": {
+                    "type": "string",
+                    "description": "Who asked the question (agent name or 'Brandon')",
+                },
+                "next_action": {
+                    "type": "string",
+                    "description": "Recommended next step",
+                },
+            },
+            "required": ["question", "decision", "reasoning"],
+        },
+    },
+    {
+        "name": "compliance_log",
+        "description": "Read past compliance audit entries. Use to check precedent, review history, or verify consistency.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer",
+                    "description": "Max entries to return (default 50)",
+                    "default": 50,
+                },
+                "decision_filter": {
+                    "type": "string",
+                    "description": "Filter by decision type: COMPLIANT, NOT_COMPLIANT, or GRAY_ZONE",
+                },
+            },
+        },
+    },
+    {
+        "name": "compliance_report",
+        "description": "Generate a compliance summary report with statistics. Shows all-time and last-7-days counts by decision type.",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+        },
+    },
 ]
 
 
@@ -415,6 +487,29 @@ async def execute_tool(tool_name: str, tool_input: dict, agent_name: str) -> dic
             seconds = min(tool_input.get("seconds", 60), 300)
             await asyncio.sleep(seconds)
             return {"waited": seconds, "status": "ok"}
+
+        # --- Compliance Tools ---
+        elif tool_name == "compliance_check":
+            return tools._request('POST', '/compliance/log', {
+                'question': tool_input['question'],
+                'decision': tool_input['decision'],
+                'reasoning': tool_input['reasoning'],
+                'jurisdiction': tool_input.get('jurisdiction', 'US'),
+                'reference': tool_input.get('reference', ''),
+                'human_review_required': tool_input.get('human_review_required', False),
+                'requested_by': tool_input.get('requested_by', ''),
+                'next_action': tool_input.get('next_action', ''),
+            })
+
+        elif tool_name == "compliance_log":
+            params = f"limit={tool_input.get('limit', 50)}"
+            decision_filter = tool_input.get('decision_filter')
+            if decision_filter:
+                params += f"&decision={decision_filter}"
+            return tools._request('GET', f'/compliance/log?{params}')
+
+        elif tool_name == "compliance_report":
+            return tools._request('GET', '/compliance/report')
 
         else:
             return {"error": f"Unknown tool: {tool_name}"}
