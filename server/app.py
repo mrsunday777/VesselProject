@@ -39,11 +39,13 @@ from config import SERVER_HOST, SERVER_PORT, VESSEL_SECRET, AGENT_SESSION_TIMEOU
 SPAWN_SECRET_PATH = Path.home() / 'Desktop' / 'MsWednesday' / '.spawn_secret'
 AGENT_GATE_WORKSPACES = {
     'MsSunday': Path.home() / 'Desktop' / 'MsSunday',
+    'msSunday': Path.home() / 'Desktop' / 'MsSunday',  # alias
     'cp1': Path.home() / 'Desktop' / 'cp1',
     'CP9': Path.home() / 'Desktop' / 'CP9',
     'cp0': Path.home() / 'Desktop' / 'cp0',
     'CP0': Path.home() / 'Desktop' / 'cp0',  # alias
     'CP1': Path.home() / 'Desktop' / 'cp1',  # alias
+    'msCounsel': Path.home() / 'Desktop' / 'msCounsel',
 }
 
 # Cache: agent_name -> (valid_until_epoch, is_authorized, gate_mtime)
