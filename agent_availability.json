@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-02-05T10:13:01.638104Z",
+  "timestamp": "2026-02-06T12:56:08.019877Z",
   "agents": {
     "CP0": {
       "status": "idle",
@@ -16,13 +16,20 @@
       "last_checkin": null
     },
     "CP9": {
-      "status": "busy",
-      "position": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump",
-      "assigned_at": "2026-02-05T07:00:00Z",
-      "type": "trader",
+      "status": "idle",
+      "position": null,
+      "assigned_at": null,
+      "type": null,
       "last_checkin": null
     },
     "msSunday": {
+      "status": "idle",
+      "position": null,
+      "assigned_at": null,
+      "type": null,
+      "last_checkin": null
+    },
+    "msCounsel": {
       "status": "idle",
       "position": null,
       "assigned_at": null,

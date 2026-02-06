@@ -328,7 +328,9 @@ class TaskResponse(BaseModel):
 # --- Auth ---
 
 def verify_token(token: str) -> bool:
-    return hashlib.sha256(token.encode()).hexdigest() == hashlib.sha256(VESSEL_SECRET.encode()).hexdigest()
+    # Accept both "Bearer <token>" and raw "<token>"
+    raw = token.removeprefix('Bearer ').strip() if token.startswith('Bearer ') else token
+    return hashlib.sha256(raw.encode()).hexdigest() == hashlib.sha256(VESSEL_SECRET.encode()).hexdigest()
 
 
 def get_requester(request: Request) -> Optional[str]:
@@ -366,6 +368,7 @@ def _read_availability() -> dict:
                 'CP1': {'status': 'idle', 'position': None, 'assigned_at': None, 'type': None, 'last_checkin': None},
                 'CP9': {'status': 'idle', 'position': None, 'assigned_at': None, 'type': None, 'last_checkin': None},
                 'msSunday': {'status': 'idle', 'position': None, 'assigned_at': None, 'type': None, 'last_checkin': None},
+                'msCounsel': {'status': 'idle', 'position': None, 'assigned_at': None, 'type': None, 'last_checkin': None},
             },
         }
     try:
