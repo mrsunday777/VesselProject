@@ -26,6 +26,7 @@ import json
 import math
 import random
 import argparse
+from collections import deque
 from datetime import datetime, timezone, timedelta
 
 # Try to load config, fall back to env vars / defaults
@@ -78,6 +79,11 @@ class Term:
     WHITE = '\033[0;37m'
 
     @staticmethod
+    def color256(n):
+        """256-color foreground ANSI escape."""
+        return f'\033[38;5;{n}m'
+
+    @staticmethod
     def pos(row, col):
         """Move cursor to row, col (1-indexed)."""
         return f'\033[{row};{col}H'
@@ -92,15 +98,87 @@ class Term:
             return 24, 80
 
 
+# --- Sprite Definitions ---
+
+AGENT_SPRITES = {
+    'CP0': {
+        'small': [
+            ' ◇ ',
+            '◇◆◇',
+            ' ◇ ',
+        ],
+        'large': [
+            '  ◇  ',
+            ' ◇◆◇ ',
+            '◇◆◆◆◇',
+            ' ◇◆◇ ',
+            '  ◇  ',
+        ],
+        'gradient': [30, 36, 51, 123, 51],
+        'fallback_color': Term.CYAN,
+    },
+    'CP1': {
+        'small': [
+            ' ▲ ',
+            '▲▲▲',
+            ' ▲ ',
+        ],
+        'large': [
+            '  ▲  ',
+            ' ▲▲▲ ',
+            '▲▲▲▲▲',
+            ' ▐▌▐▌',
+            '  ▀  ',
+        ],
+        'gradient': [55, 127, 201, 219, 201],
+        'fallback_color': Term.MAGENTA,
+    },
+    'CP9': {
+        'small': [
+            '┌─┐',
+            '│■│',
+            '└─┘',
+        ],
+        'large': [
+            '┌───┐',
+            '│░░░│',
+            '│░■░│',
+            '│░░░│',
+            '└───┘',
+        ],
+        'gradient': [58, 184, 226, 227, 226],
+        'fallback_color': Term.CYAN,
+    },
+    'msSunday': {
+        'small': [
+            ' ○ ',
+            '○●○',
+            ' ○ ',
+        ],
+        'large': [
+            ' ·○· ',
+            '○ ● ○',
+            '● ◉ ●',
+            '○ ● ○',
+            ' ·○· ',
+        ],
+        'gradient': [22, 28, 46, 156, 46],
+        'fallback_color': Term.YELLOW,
+    },
+}
+
+
 # --- Bouncing Agent ---
 
 class Agent:
-    def __init__(self, name, symbol, color, max_w, max_h):
+    def __init__(self, name, sprite_small, sprite_large, color_gradient, fallback_color, max_w, max_h):
         self.name = name
-        self.symbol = symbol
-        self.color = color
-        self.x = random.randint(4, max(5, max_w - 10))
-        self.y = random.randint(4, max(5, max_h - 1))
+        self.sprite_small = sprite_small
+        self.sprite_large = sprite_large
+        self.color_gradient = color_gradient
+        self.fallback_color = fallback_color
+        self.x = float(random.randint(6, max(7, max_w - 12)))
+        self.y = float(random.randint(6, max(7, max_h - 4)))
         self.vx = random.uniform(-1.5, 1.5)
         self.vy = random.uniform(-0.8, 0.8)
         if abs(self.vx) < 0.3:
@@ -110,26 +188,247 @@ class Agent:
         self.max_w = max_w
         self.max_h = max_h
         self.glow = 0
+        self.glow_phase = 0
         self.active = False
-        self.last_seen = 0  # timestamp of last detected activity
+        self.last_seen = 0
+        self.prev_x = self.x
+        self.prev_y = self.y
+        self.trail = deque(maxlen=5)
+
+    def current_sprite(self):
+        if self.active or self.glow > 0:
+            return self.sprite_large
+        return self.sprite_small
+
+    def sprite_dims(self):
+        """Return (height, width) of current sprite."""
+        sp = self.current_sprite()
+        h = len(sp)
+        w = max(len(row) for row in sp) if sp else 0
+        return h, w
 
     def update(self):
+        self.prev_x = self.x
+        self.prev_y = self.y
+
         self.x += self.vx
         self.y += self.vy
 
-        if self.x <= 2 or self.x >= self.max_w - len(self.name) - 3:
+        h, w = self.sprite_dims()
+        # label extends right of sprite: sprite_width + 1 + name_len
+        total_w = w + 1 + len(self.name)
+
+        min_x = 2
+        max_x = self.max_w - total_w - 1
+        min_y = 4
+        max_y = self.max_h - h
+
+        if self.x <= min_x or self.x >= max_x:
             self.vx *= -1
-        if self.y <= 4 or self.y >= self.max_h - 1:
+        if self.y <= min_y or self.y >= max_y:
             self.vy *= -1
 
-        self.x = max(2, min(self.max_w - len(self.name) - 3, self.x))
-        self.y = max(4, min(self.max_h - 1, self.y))
+        self.x = max(min_x, min(max_x, self.x))
+        self.y = max(min_y, min(max_y, self.y))
         self.glow = max(0, self.glow - 1)
 
-    def render(self):
-        style = Term.BOLD if (self.glow > 0 or self.active) else Term.DIM
-        marker = ' *' if self.active else ''
-        return f"{Term.pos(int(self.y), int(self.x))}{style}{self.color}{self.symbol} {self.name}{marker}{Term.RESET}"
+        # Advance glow phase when active
+        if self.active or self.glow > 0:
+            self.glow_phase = (self.glow_phase + 1) % len(self.color_gradient)
+
+        # Add trail particle if we moved
+        if abs(self.x - self.prev_x) > 0.5 or abs(self.y - self.prev_y) > 0.5:
+            self.trail.append((int(self.prev_x), int(self.prev_y), 0))
+
+        # Age all trail entries
+        aged = deque(maxlen=5)
+        for tx, ty, age in self.trail:
+            if age < 5:
+                aged.append((tx, ty, age + 1))
+        self.trail = aged
+
+
+# --- Background Particles ---
+
+class Particle:
+    def __init__(self, x, y, char, color_code):
+        self.x = x
+        self.y = y
+        self.char = char
+        self.color_code = color_code
+        self.drift_col_timer = random.randint(2, 3)
+        self.drift_row_timer = random.randint(5, 10)
+        self.twinkle = False
+
+    def update(self, cols, min_y, max_y):
+        self.drift_col_timer -= 1
+        if self.drift_col_timer <= 0:
+            self.x += random.choice([-1, 0, 1])
+            self.x = max(1, min(cols - 1, self.x))
+            self.drift_col_timer = random.randint(2, 3)
+
+        self.drift_row_timer -= 1
+        if self.drift_row_timer <= 0:
+            self.y += random.choice([-1, 0, 1])
+            self.y = max(min_y, min(max_y, self.y))
+            self.drift_row_timer = random.randint(5, 10)
+
+        self.twinkle = random.random() < 0.10
+
+
+def init_particles(cols, min_y, max_y, density=0.025):
+    """Scatter background particles at ~2.5% density."""
+    particles = []
+    area = cols * (max_y - min_y + 1)
+    count = int(area * density)
+    chars = ['·', '∘']
+    colors = [24, 25, 30, 31]
+    for _ in range(count):
+        x = random.randint(1, cols - 1)
+        y = random.randint(min_y, max_y)
+        particles.append(Particle(x, y, random.choice(chars), random.choice(colors)))
+    return particles
+
+
+def update_particles(particles, cols, min_y, max_y):
+    for p in particles:
+        p.update(cols, min_y, max_y)
+
+
+# --- Connection Lines ---
+
+def should_connect(a1, a2, max_dist=30):
+    """Only draw connection if agents are within max_dist cells."""
+    dx = a1.x - a2.x
+    dy = a1.y - a2.y
+    return (dx * dx + dy * dy) <= max_dist * max_dist
+
+
+def draw_line_between(buf, x0, y0, x1, y1, cols, rows, min_y):
+    """Bresenham's line algorithm — dotted, directional chars, dark gray."""
+    style = Term.DIM + Term.color256(240)
+    dx = abs(x1 - x0)
+    dy = abs(y1 - y0)
+    sx = 1 if x0 < x1 else -1
+    sy = 1 if y0 < y1 else -1
+    err = dx - dy
+    step = 0
+
+    while True:
+        # Dotted: draw every other cell
+        if step % 2 == 0:
+            if min_y <= y0 < rows and 1 <= x0 < cols:
+                if dx > dy * 2:
+                    ch = '─'
+                elif dy > dx * 2:
+                    ch = '│'
+                else:
+                    ch = '·'
+                buf_set(buf, y0, x0, ch, style)
+
+        if x0 == x1 and y0 == y1:
+            break
+        e2 = 2 * err
+        if e2 > -dy:
+            err -= dy
+            x0 += sx
+        if e2 < dx:
+            err += dx
+            y0 += sy
+        step += 1
+        if step > 200:
+            break
+
+
+# --- Frame Buffer System ---
+
+def buf_set(buf, row, col, char, style):
+    """Write to sparse frame buffer dict."""
+    buf[(int(row), int(col))] = (char, style)
+
+
+def render_agent_layer(agents, particles, frame, rows, cols, min_y, max_y):
+    """Composite all visual layers into a frame buffer and emit ANSI output."""
+    buf = {}
+
+    # Layer 1: Background particles
+    for p in particles:
+        if p.twinkle:
+            pstyle = Term.BOLD + Term.color256(p.color_code)
+        else:
+            pstyle = Term.DIM + Term.color256(p.color_code)
+        buf_set(buf, p.y, p.x, p.char, pstyle)
+
+    # Layer 2: Connection lines between nearby agents
+    agent_list = list(agents.values())
+    for i in range(len(agent_list)):
+        for j in range(i + 1, len(agent_list)):
+            a1, a2 = agent_list[i], agent_list[j]
+            if should_connect(a1, a2):
+                # Use center of sprite for line endpoints
+                h1, w1 = a1.sprite_dims()
+                h2, w2 = a2.sprite_dims()
+                cx1 = int(a1.x) + w1 // 2
+                cy1 = int(a1.y) + h1 // 2
+                cx2 = int(a2.x) + w2 // 2
+                cy2 = int(a2.y) + h2 // 2
+                draw_line_between(buf, cx1, cy1, cx2, cy2, cols, rows, min_y)
+
+    # Layer 3: Agent trails (fading dots in agent color)
+    for agent in agents.values():
+        base_color = agent.color_gradient[0]
+        for tx, ty, age in agent.trail:
+            if min_y <= ty < rows and 1 <= tx < cols:
+                # Fade: more dim as age increases
+                fade_colors = agent.color_gradient
+                cidx = min(age, len(fade_colors) - 1)
+                tstyle = Term.DIM + Term.color256(fade_colors[cidx])
+                buf_set(buf, ty, tx, '·', tstyle)
+
+    # Layer 4: Agent sprites
+    for agent in agents.values():
+        sprite = agent.current_sprite()
+        h, w = agent.sprite_dims()
+        ax = int(agent.x)
+        ay = int(agent.y)
+
+        if agent.active or agent.glow > 0:
+            cidx = agent.glow_phase % len(agent.color_gradient)
+            color = Term.color256(agent.color_gradient[cidx])
+            style = Term.BOLD + color
+        else:
+            style = Term.DIM + Term.color256(agent.color_gradient[0])
+
+        for row_idx, row_str in enumerate(sprite):
+            for col_idx, ch in enumerate(row_str):
+                if ch == ' ':
+                    continue
+                r = ay + row_idx
+                c = ax + col_idx
+                if min_y <= r < rows and 1 <= c < cols:
+                    buf_set(buf, r, c, ch, style)
+
+        # Layer 5: Agent name label (right of sprite, vertically centered)
+        label_row = ay + h // 2
+        label_col = ax + w + 1
+        if agent.active:
+            lbl_style = Term.BOLD + Term.color256(agent.color_gradient[2])
+            label_text = agent.name + ' *'
+        else:
+            lbl_style = Term.DIM + Term.color256(agent.color_gradient[0])
+            label_text = agent.name
+
+        for i, ch in enumerate(label_text):
+            c = label_col + i
+            if min_y <= label_row < rows and 1 <= c < cols:
+                buf_set(buf, label_row, c, ch, lbl_style)
+
+    # Emit buffer as sorted ANSI writes
+    output = []
+    for (r, c) in sorted(buf.keys()):
+        ch, style = buf[(r, c)]
+        output.append(f"{Term.pos(r, c)}{style}{ch}{Term.RESET}")
+    return ''.join(output)
 
 
 # --- Data Fetcher ---
@@ -284,7 +583,7 @@ def render_activity_panel(activity, rows, cols):
         lines.append(f"{Term.pos(row, col_start)}{Term.DIM}No recent activity{Term.RESET}")
         return ''.join(lines)
 
-    for entry, label in filtered[-5:]:
+    for entry, label in filtered[-13:]:
         ts = entry.get('timestamp', '')
         action = entry.get('action', '?')
         # Parse time — convert UTC to PST, show HH:MM
@@ -474,13 +773,23 @@ def run_display(server_ip, refresh):
 
     rows, cols = Term.get_size()
 
-    # Create bouncing agents
-    agents = {
-        'CP0': Agent('CP0', '\u25c6', Term.GREEN, cols, rows),
-        'CP1': Agent('CP1', '\u25b2', Term.MAGENTA, cols, rows),
-        'CP9': Agent('CP9', '\u25a0', Term.CYAN, cols, rows),
-        'msSunday': Agent('msSunday', '\u25c9', Term.YELLOW, cols, rows),
-    }
+    # Create bouncing agents with sprites
+    agents = {}
+    for name, sdef in AGENT_SPRITES.items():
+        agents[name] = Agent(
+            name=name,
+            sprite_small=sdef['small'],
+            sprite_large=sdef['large'],
+            color_gradient=sdef['gradient'],
+            fallback_color=sdef['fallback_color'],
+            max_w=cols,
+            max_h=rows,
+        )
+
+    # Init background particles
+    agent_min_y = 4
+    agent_max_y = rows - 1
+    particles = init_particles(cols, agent_min_y, agent_max_y)
 
     state = None
     activity = []
@@ -494,6 +803,18 @@ def run_display(server_ip, refresh):
 
     try:
         while True:
+            # Terminal resize detection every 10 frames
+            if frame % 10 == 0:
+                new_rows, new_cols = Term.get_size()
+                if new_rows != rows or new_cols != cols:
+                    rows, cols = new_rows, new_cols
+                    agent_min_y = 4
+                    agent_max_y = rows - 1
+                    particles = init_particles(cols, agent_min_y, agent_max_y)
+                    for agent in agents.values():
+                        agent.max_w = cols
+                        agent.max_h = rows
+
             # Fetch data periodically
             now = time.time()
             if now - last_fetch >= fetch_interval:
@@ -517,12 +838,23 @@ def run_display(server_ip, refresh):
                     fetch_errors += 1
 
                 # Fetch activity on same interval (no extra request spam)
-                activity = fetch_activity(server_url, VESSEL_SECRET, limit=15)
+                activity = fetch_activity(server_url, VESSEL_SECRET, limit=30)
 
                 # Also mark agents active from recent relay activity
-                # Use 'requester' field (who made the call) over 'agent_name' (which wallet)
+                # Only count entries from the last 90s — old entries shouldn't light up agents
                 agent_names = set(agents.keys())
                 for entry in activity:
+                    # Skip old entries — parse timestamp and check age
+                    ts = entry.get('timestamp', '')
+                    try:
+                        utc_str = ts.replace('Z', '+00:00')
+                        entry_time = datetime.fromisoformat(utc_str)
+                        entry_age = (datetime.now(timezone.utc) - entry_time).total_seconds()
+                        if entry_age > 90:
+                            continue  # Too old to count as "active"
+                    except (ValueError, TypeError):
+                        continue
+
                     # Prefer requester (who made the request) for attribution
                     a = entry.get('requester') or entry.get('agent_name', '')
                     if a in agent_names:
@@ -539,17 +871,16 @@ def run_display(server_ip, refresh):
                             active_agents.add(name)
 
                 for name, agent in agents.items():
-                    if name in active_agents:
-                        agent.last_seen = now
-                        agent.glow = 5
-                    # Stay active for 90s after last seen (covers gaps between monitoring cycles)
-                    agent.active = (now - agent.last_seen) < 90
+                    agent.active = name in active_agents
+                    if agent.active:
+                        agent.glow = 3
 
                 last_fetch = now
 
-            # Update agent positions
+            # Update agent positions and particles
             for agent in agents.values():
                 agent.update()
+            update_particles(particles, cols, agent_min_y, agent_max_y)
 
             # Render
             output = Term.CLEAR
@@ -566,12 +897,11 @@ def run_display(server_ip, refresh):
             # Activity section (below header, above data)
             output += render_activity_panel(activity, rows, cols)
 
-            # Agents (bouncing across full screen)
-            for agent in agents.values():
-                output += agent.render()
-
             # Data panel (bottom area)
             output += render_data_panel(state, rows, cols)
+
+            # Agent layer last — sprites float on top of panels
+            output += render_agent_layer(agents, particles, frame, rows, cols, agent_min_y, agent_max_y)
 
             sys.stdout.write(output)
             sys.stdout.flush()
