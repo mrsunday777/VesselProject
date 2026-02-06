@@ -273,16 +273,16 @@ class Particle:
             self.y = max(min_y, min(max_y, self.y))
             self.drift_row_timer = random.randint(5, 10)
 
-        self.twinkle = random.random() < 0.25
+        self.twinkle = random.random() < 0.15
 
 
-def init_particles(cols, min_y, max_y, density=0.07):
-    """Scatter background particles at ~7% density."""
+def init_particles(cols, min_y, max_y, density=0.035):
+    """Scatter background particles at ~3.5% density."""
     particles = []
     area = cols * (max_y - min_y + 1)
     count = int(area * density)
-    chars = ['.', '+', '*', 'o']
-    colors = [37, 38, 44, 45, 51, 87]
+    chars = ['.', '.', '.', '+']
+    colors = [37, 38, 44, 45]
     for _ in range(count):
         x = random.randint(1, cols - 1)
         y = random.randint(min_y, max_y)
@@ -359,20 +359,7 @@ def render_agent_layer(agents, particles, frame, rows, cols, min_y, max_y):
             pstyle = Term.color256(p.color_code)
         buf_set(buf, p.y, p.x, p.char, pstyle)
 
-    # Layer 2: Connection lines between nearby agents
-    agent_list = list(agents.values())
-    for i in range(len(agent_list)):
-        for j in range(i + 1, len(agent_list)):
-            a1, a2 = agent_list[i], agent_list[j]
-            if should_connect(a1, a2):
-                # Use center of sprite for line endpoints
-                h1, w1 = a1.sprite_dims()
-                h2, w2 = a2.sprite_dims()
-                cx1 = int(a1.x) + w1 // 2
-                cy1 = int(a1.y) + h1 // 2
-                cx2 = int(a2.x) + w2 // 2
-                cy2 = int(a2.y) + h2 // 2
-                draw_line_between(buf, cx1, cy1, cx2, cy2, cols, rows, min_y)
+    # Layer 2: Connection lines (disabled — too noisy on small screen)
 
     # Layer 3: Agent trails (fading chars in agent color)
     for agent in agents.values():
@@ -478,6 +465,161 @@ def fetch_activity(server_url, secret, limit=5):
             return []
     except Exception:
         return []
+
+
+def fetch_agent_availability(server_url, secret):
+    """Fetch agent availability from relay server. READ-ONLY."""
+    url = f"{server_url}/agents/availability"
+
+    try:
+        if USE_URLLIB:
+            req = Request(url, headers={'Authorization': secret})
+            resp = urlopen(req, timeout=5)
+            if resp.status == 200:
+                return json.loads(resp.read().decode())
+            return None
+        elif USE_REQUESTS:
+            resp = req_lib.get(url, headers={'Authorization': secret}, timeout=5)
+            if resp.status_code == 200:
+                return resp.json()
+            return None
+    except Exception:
+        return None
+
+
+# Map activity actions to vessel tool types
+ACTION_TO_TOOL = {
+    'BUY_REQUESTED': 'trading', 'BUY_RESULT': 'trading', 'BUY_ERROR': 'trading',
+    'SELL_REQUESTED': 'trading', 'SELL_RESULT': 'trading', 'SELL_ERROR': 'trading',
+    'FEED_TELEGRAM': 'scanning', 'FEED_GRADUATING': 'scanning',
+    'FEED_LAUNCHES': 'scanning', 'FEED_CATALYSTS': 'scanning',
+    'POSITIONS': 'pos_mgmt', 'MANAGER_CHECKIN': 'pos_mgmt',
+    'WALLET_STATUS': 'health', 'TRANSACTIONS': 'health',
+    'TRANSFER_REQUESTED': 'transfers', 'TRANSFER_SOL_REQUESTED': 'transfers',
+    'TRANSFER_RESULT': 'transfers', 'TRANSFER_SOL_RESULT': 'transfers',
+    'CONTENT_SCAN': 'content', 'CONTENT_SUBMIT': 'content',
+    'CONTENT_LESSONS': 'content', 'CONTENT_QUEUE': 'content',
+    'NOTIFY_REQUESTED': 'notify',
+}
+
+# Map formal assignment types to tool types
+ASSIGN_TYPE_TO_TOOL = {
+    'trader': 'trading',
+    'scanner': 'scanning',
+    'manager': 'pos_mgmt',
+    'health': 'health',
+    'content_manager': 'content',
+}
+
+
+def render_agent_status_panel(agent_avail, activity, rows, cols):
+    """Render vessel tools panel — detects jobs from both assignments and recent activity."""
+    lines = []
+    col_start = 2
+
+    # Find where activity panel ends
+    filtered_count = 0
+    if activity:
+        for entry in activity:
+            action = entry.get('action', '')
+            label = ACTION_LABELS.get(action, action[:16])
+            if label is not None:
+                filtered_count += 1
+        filtered_count = min(filtered_count, 13)
+
+    row = 5 + filtered_count + 1
+
+    lines.append(f"{Term.pos(row, col_start)}{Term.BOLD}{Term.YELLOW}VESSEL TOOLS{Term.RESET}")
+    row += 1
+
+    # tool_agents: {tool_type: [(agent_name, detail_str), ...]}
+    tool_agents = {}
+    seen_agents = set()
+
+    # Source 1: Formal assignments from /agents/availability
+    if agent_avail and 'agents' in agent_avail:
+        for agent_name, info in agent_avail.get('agents', {}).items():
+            if info.get('status') == 'busy' and info.get('type'):
+                tool = ASSIGN_TYPE_TO_TOOL.get(info['type'], info['type'])
+                pos = info.get('position')
+                detail = f"{pos[:6]}..{pos[-4:]}" if pos else ''
+                tool_agents.setdefault(tool, []).append((agent_name, detail))
+                seen_agents.add(agent_name)
+
+    # Source 2: Infer jobs from recent activity (last 90s)
+    if activity:
+        for entry in activity:
+            action = entry.get('action', '')
+            tool = ACTION_TO_TOOL.get(action)
+            if not tool:
+                continue
+
+            # Check age — only count recent entries
+            ts = entry.get('timestamp', '')
+            try:
+                utc_str = ts.replace('Z', '+00:00')
+                entry_time = datetime.fromisoformat(utc_str)
+                age = (datetime.now(timezone.utc) - entry_time).total_seconds()
+                if age > 90:
+                    continue
+            except (ValueError, TypeError):
+                continue
+
+            # Find which agent did this
+            agent = entry.get('requester') or entry.get('agent_name') or entry.get('agent', '')
+            if not agent or agent in seen_agents or agent == 'MsWednesday':
+                continue
+
+            # Add to tool mapping
+            detail_label = ACTION_LABELS.get(action, action[:12])
+            if detail_label is None:
+                detail_label = ''
+            tool_agents.setdefault(tool, []).append((agent, detail_label))
+            seen_agents.add(agent)
+
+    # Vessel tool list
+    tools = [
+        ('Trading',   'trading',   Term.BRIGHT_GREEN),
+        ('Scanning',  'scanning',  Term.BRIGHT_CYAN),
+        ('Pos Mgmt',  'pos_mgmt',  Term.CYAN),
+        ('Health',    'health',    Term.YELLOW),
+        ('Transfers', 'transfers', Term.MAGENTA),
+        ('Content',   'content',   Term.WHITE),
+    ]
+
+    for tool_name, tool_type, tool_color in tools:
+        agents_on_tool = tool_agents.get(tool_type, [])
+
+        tool_fmt = tool_name.ljust(10)
+        line = f"{Term.pos(row, col_start)}{tool_color}{tool_fmt}{Term.RESET} "
+
+        if agents_on_tool:
+            parts = []
+            for agent_name, detail in agents_on_tool:
+                sprite_def = AGENT_SPRITES.get(agent_name, {})
+                ac = sprite_def.get('fallback_color', Term.WHITE)
+                part = f"{ac}{agent_name}{Term.RESET}"
+                if detail:
+                    part += f" {Term.DIM}{detail}{Term.RESET}"
+                parts.append(part)
+            line += ', '.join(parts)
+        else:
+            line += f"{Term.DIM}--{Term.RESET}"
+
+        line += Term.ERASE_EOL
+        lines.append(line)
+        row += 1
+
+    # Show idle agents
+    all_agents = ['CP0', 'CP1', 'CP9', 'msSunday']
+    idle_agents = [a for a in all_agents if a not in seen_agents]
+
+    if idle_agents:
+        idle_str = ', '.join(idle_agents)
+        line = f"{Term.pos(row, col_start)}{Term.DIM}Idle: {idle_str}{Term.RESET}{Term.ERASE_EOL}"
+        lines.append(line)
+
+    return ''.join(lines)
 
 
 # --- Renderer ---
@@ -800,6 +942,7 @@ def run_display(server_ip, refresh):
 
     state = None
     activity = []
+    agent_avail = None
     last_fetch = 0
     fetch_interval = max(3.0, refresh)  # Don't hammer the server
     frame = 0
@@ -844,8 +987,9 @@ def run_display(server_ip, refresh):
                 else:
                     fetch_errors += 1
 
-                # Fetch activity on same interval (no extra request spam)
+                # Fetch activity and agent availability on same interval
                 activity = fetch_activity(server_url, VESSEL_SECRET, limit=30)
+                agent_avail = fetch_agent_availability(server_url, VESSEL_SECRET)
 
                 # Also mark agents active from recent relay activity
                 # Only count entries from the last 90s — old entries shouldn't light up agents
@@ -903,6 +1047,9 @@ def run_display(server_ip, refresh):
 
             # Activity section (below header, above data)
             output += render_activity_panel(activity, rows, cols)
+
+            # Agent status section (below activity)
+            output += render_agent_status_panel(agent_avail, activity, rows, cols)
 
             # Data panel (bottom area)
             output += render_data_panel(state, rows, cols)
