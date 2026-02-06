@@ -165,6 +165,22 @@ AGENT_SPRITES = {
         'gradient': [34, 46, 82, 156, 82],
         'fallback_color': Term.YELLOW,
     },
+    'msCounsel': {
+        'small': [
+            ' § ',
+            '§§§',
+            ' § ',
+        ],
+        'large': [
+            '  §  ',
+            ' §§§ ',
+            '§§§§§',
+            ' §§§ ',
+            '  §  ',
+        ],
+        'gradient': [196, 203, 210, 217, 210],
+        'fallback_color': Term.RED,
+    },
 }
 
 
@@ -487,6 +503,26 @@ def fetch_agent_availability(server_url, secret):
         return None
 
 
+def fetch_agent_sessions(server_url, secret):
+    """Fetch active agent sessions from relay server. READ-ONLY."""
+    url = f"{server_url}/agents/sessions"
+
+    try:
+        if USE_URLLIB:
+            req = Request(url, headers={'Authorization': secret})
+            resp = urlopen(req, timeout=5)
+            if resp.status == 200:
+                return json.loads(resp.read().decode())
+            return None
+        elif USE_REQUESTS:
+            resp = req_lib.get(url, headers={'Authorization': secret}, timeout=5)
+            if resp.status_code == 200:
+                return resp.json()
+            return None
+    except Exception:
+        return None
+
+
 # Map activity actions to vessel tool types
 ACTION_TO_TOOL = {
     'BUY_REQUESTED': 'trading', 'BUY_RESULT': 'trading', 'BUY_ERROR': 'trading',
@@ -500,6 +536,10 @@ ACTION_TO_TOOL = {
     'CONTENT_SCAN': 'content', 'CONTENT_SUBMIT': 'content',
     'CONTENT_LESSONS': 'content', 'CONTENT_QUEUE': 'content',
     'NOTIFY_REQUESTED': 'notify',
+    'AGENT_SPAWNED': 'sessions', 'SPAWN_DENIED': 'sessions', 'SPAWN_GATE_DENIED': 'sessions',
+    'SESSION_COMPLETED': 'sessions', 'SESSION_KILLED': 'sessions',
+    'SESSION_TIMEOUT': 'sessions', 'SESSION_ORPHANED': 'sessions',
+    'COMPLIANCE_DECISION': 'compliance',
 }
 
 # Map formal assignment types to tool types
@@ -509,11 +549,12 @@ ASSIGN_TYPE_TO_TOOL = {
     'manager': 'pos_mgmt',
     'health': 'health',
     'content_manager': 'content',
+    'compliance_counsel': 'compliance',
 }
 
 
-def render_agent_status_panel(agent_avail, activity, rows, cols):
-    """Render vessel tools panel — detects jobs from both assignments and recent activity."""
+def render_agent_status_panel(agent_avail, activity, rows, cols, agent_sessions=None):
+    """Render vessel tools panel — detects jobs from both assignments, sessions, and recent activity."""
     lines = []
     col_start = 2
 
@@ -546,7 +587,23 @@ def render_agent_status_panel(agent_avail, activity, rows, cols):
                 tool_agents.setdefault(tool, []).append((agent_name, detail))
                 seen_agents.add(agent_name)
 
-    # Source 2: Infer jobs from recent activity (last 90s)
+    # Source 2: Active vessel sessions
+    if agent_sessions and 'sessions' in agent_sessions:
+        for sess in agent_sessions['sessions']:
+            if sess.get('status') not in ('running', 'dispatched'):
+                continue
+            agent_name = sess.get('agent_name', '')
+            if not agent_name or agent_name in seen_agents:
+                continue
+            jt = sess.get('job_type', 'general')
+            tool = ASSIGN_TYPE_TO_TOOL.get(jt, 'sessions')
+            elapsed = sess.get('elapsed_seconds', 0)
+            elapsed_m = int(elapsed / 60) if elapsed else 0
+            detail = f"{jt} ({elapsed_m}m)" if elapsed_m > 0 else jt
+            tool_agents.setdefault(tool, []).append((agent_name, detail))
+            seen_agents.add(agent_name)
+
+    # Source 3: Infer jobs from recent activity (last 90s)
     if activity:
         for entry in activity:
             action = entry.get('action', '')
@@ -579,12 +636,14 @@ def render_agent_status_panel(agent_avail, activity, rows, cols):
 
     # Vessel tool list
     tools = [
-        ('Trading',   'trading',   Term.BRIGHT_GREEN),
-        ('Scanning',  'scanning',  Term.BRIGHT_CYAN),
-        ('Pos Mgmt',  'pos_mgmt',  Term.CYAN),
-        ('Health',    'health',    Term.YELLOW),
-        ('Transfers', 'transfers', Term.MAGENTA),
-        ('Content',   'content',   Term.WHITE),
+        ('Trading',    'trading',    Term.BRIGHT_GREEN),
+        ('Scanning',   'scanning',   Term.BRIGHT_CYAN),
+        ('Pos Mgmt',   'pos_mgmt',   Term.CYAN),
+        ('Health',     'health',     Term.YELLOW),
+        ('Transfers',  'transfers',  Term.MAGENTA),
+        ('Content',    'content',    Term.WHITE),
+        ('Compliance', 'compliance', Term.BRIGHT_RED),
+        ('Sessions',   'sessions',   Term.GREEN),
     ]
 
     for tool_name, tool_type, tool_color in tools:
@@ -611,7 +670,7 @@ def render_agent_status_panel(agent_avail, activity, rows, cols):
         row += 1
 
     # Show idle agents
-    all_agents = ['CP0', 'CP1', 'CP9', 'msSunday']
+    all_agents = ['CP0', 'CP1', 'CP9', 'msSunday', 'msCounsel']
     idle_agents = [a for a in all_agents if a not in seen_agents]
 
     if idle_agents:
@@ -651,6 +710,12 @@ def activity_color(action):
         return Term.BRIGHT_RED
     if 'WALLET_STATUS' in action or 'TRANSACTIONS' in action or 'POSITIONS' in action:
         return Term.DIM
+    if 'SPAWN' in action:
+        return Term.BRIGHT_GREEN
+    if 'SESSION' in action:
+        return Term.YELLOW
+    if 'COMPLIANCE' in action:
+        return Term.BRIGHT_RED
     # feeds and everything else
     return Term.DIM
 
@@ -703,6 +768,17 @@ ACTION_LABELS = {
     'TRANSFER_SOL_RESULT': None,
     'TRANSFER_SOL_ERROR': 'SOL XFER ERR',
     'TRANSFER_SOL_REJECTED': 'SOL DENIED',
+    # Vessel isolation — spawn & sessions
+    'AGENT_SPAWNED': 'SPAWNED',
+    'SPAWN_DENIED': 'SPAWN DENY',
+    'SPAWN_GATE_DENIED': 'GATE DENY',
+    'SESSION_COMPLETED': 'SESS DONE',
+    'SESSION_KILLED': 'SESS KILL',
+    'SESSION_TIMEOUT': 'SESS TIMEOUT',
+    'SESSION_ORPHANED': 'SESS ORPHAN',
+    'SESSION_KILL_SEND_ERROR': None,
+    # Compliance
+    'COMPLIANCE_DECISION': 'COMPLIANCE',
 }
 
 
@@ -751,7 +827,33 @@ def render_activity_panel(activity, rows, cols):
         # Use 'requester' for WHO did it, 'agent_name'/'agent' for WHICH wallet
         who = entry.get('requester') or entry.get('agent_name') or entry.get('agent') or entry.get('from_agent', '')
         detail = ''
-        if 'agent' in entry and action in ('AGENT_ASSIGNED', 'ASSIGN_REJECTED', 'AGENT_RELEASED', 'MANAGER_CHECKIN', 'MANAGER_TIMEOUT'):
+        if action in ('AGENT_SPAWNED', 'SPAWN_DENIED', 'SPAWN_GATE_DENIED'):
+            ag = entry.get('agent_name', entry.get('agent', '?'))
+            jt = entry.get('job_type', '')
+            reason = entry.get('reason', entry.get('detail', ''))
+            if action == 'AGENT_SPAWNED':
+                detail = f"{ag} ({jt})" if jt else ag
+            else:
+                detail = f"{ag} ({reason})" if reason else ag
+        elif action in ('SESSION_COMPLETED', 'SESSION_KILLED', 'SESSION_TIMEOUT', 'SESSION_ORPHANED'):
+            ag = entry.get('agent_name', entry.get('agent', '?'))
+            elapsed = entry.get('elapsed_seconds', entry.get('elapsed_hours', ''))
+            if elapsed and action == 'SESSION_TIMEOUT':
+                detail = f"{ag} ({elapsed}h)"
+            elif elapsed:
+                detail = f"{ag} ({int(float(elapsed))}s)"
+            else:
+                detail = ag
+        elif action == 'COMPLIANCE_DECISION':
+            decision = entry.get('decision', '?')
+            topic = entry.get('topic', entry.get('reference', ''))
+            ag = entry.get('agent_name', entry.get('requested_by', ''))
+            detail = f"{decision}"
+            if topic:
+                detail += f" — {topic[:20]}"
+            if ag:
+                detail = f"[{ag}] {detail}"
+        elif 'agent' in entry and action in ('AGENT_ASSIGNED', 'ASSIGN_REJECTED', 'AGENT_RELEASED', 'MANAGER_CHECKIN', 'MANAGER_TIMEOUT'):
             # Isolation model actions
             ag = entry.get('agent', '?')
             atype = entry.get('type', entry.get('old_type', ''))
@@ -859,7 +961,7 @@ def render_data_panel(state, rows, cols):
             buys = pos.get('buys', 0)
             sells = pos.get('sells', 0)
 
-            ac = Term.CYAN if agent == 'CP9' else Term.YELLOW if agent == 'msSunday' else Term.GREEN
+            ac = Term.CYAN if agent == 'CP9' else Term.YELLOW if agent == 'msSunday' else Term.RED if agent == 'msCounsel' else Term.GREEN
             pc = pnl_color(pnl_pct)
 
             lines.append(f"{Term.pos(row, col_start)}")
@@ -943,6 +1045,7 @@ def run_display(server_ip, refresh):
     state = None
     activity = []
     agent_avail = None
+    agent_sessions = None
     last_fetch = 0
     fetch_interval = max(3.0, refresh)  # Don't hammer the server
     frame = 0
@@ -987,9 +1090,10 @@ def run_display(server_ip, refresh):
                 else:
                     fetch_errors += 1
 
-                # Fetch activity and agent availability on same interval
+                # Fetch activity, agent availability, and sessions on same interval
                 activity = fetch_activity(server_url, VESSEL_SECRET, limit=30)
                 agent_avail = fetch_agent_availability(server_url, VESSEL_SECRET)
+                agent_sessions = fetch_agent_sessions(server_url, VESSEL_SECRET)
 
                 # Also mark agents active from recent relay activity
                 # Only count entries from the last 90s — old entries shouldn't light up agents
@@ -1021,6 +1125,14 @@ def run_display(server_ip, refresh):
                         if name in title:
                             active_agents.add(name)
 
+                # Mark agents with active vessel sessions
+                if agent_sessions and 'sessions' in agent_sessions:
+                    for sess in agent_sessions.get('sessions', []):
+                        if sess.get('status') in ('running', 'dispatched'):
+                            a = sess.get('agent_name', '')
+                            if a in agent_names:
+                                active_agents.add(a)
+
                 for name, agent in agents.items():
                     agent.active = name in active_agents
                     if agent.active:
@@ -1049,7 +1161,7 @@ def run_display(server_ip, refresh):
             output += render_activity_panel(activity, rows, cols)
 
             # Agent status section (below activity)
-            output += render_agent_status_panel(agent_avail, activity, rows, cols)
+            output += render_agent_status_panel(agent_avail, activity, rows, cols, agent_sessions)
 
             # Data panel (bottom area)
             output += render_data_panel(state, rows, cols)
