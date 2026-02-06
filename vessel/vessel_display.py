@@ -103,16 +103,16 @@ class Term:
 AGENT_SPRITES = {
     'CP0': {
         'small': [
-            ' ◇ ',
-            '◇◆◇',
-            ' ◇ ',
+            ' ◆ ',
+            '◆◆◆',
+            ' ◆ ',
         ],
         'large': [
-            '  ◇  ',
-            ' ◇◆◇ ',
-            '◇◆◆◆◇',
-            ' ◇◆◇ ',
-            '  ◇  ',
+            '  ◆  ',
+            ' ◆◆◆ ',
+            '◆◆◆◆◆',
+            ' ◆◆◆ ',
+            '  ◆  ',
         ],
         'gradient': [44, 51, 87, 123, 87],
         'fallback_color': Term.CYAN,
@@ -127,40 +127,40 @@ AGENT_SPRITES = {
             '  ▲  ',
             ' ▲▲▲ ',
             '▲▲▲▲▲',
-            ' ▐▌▐▌',
-            '  ▀  ',
+            ' ▲▲▲ ',
+            '  ▲  ',
         ],
         'gradient': [127, 163, 201, 219, 201],
         'fallback_color': Term.MAGENTA,
     },
     'CP9': {
         'small': [
-            '┌─┐',
-            '│■│',
-            '└─┘',
+            '+-+',
+            '|■|',
+            '+-+',
         ],
         'large': [
-            '┌───┐',
-            '│░░░│',
-            '│░■░│',
-            '│░░░│',
-            '└───┘',
+            '+---+',
+            '|■■■|',
+            '|■■■|',
+            '|■■■|',
+            '+---+',
         ],
         'gradient': [184, 220, 226, 228, 226],
         'fallback_color': Term.CYAN,
     },
     'msSunday': {
         'small': [
-            ' ○ ',
-            '○●○',
-            ' ○ ',
+            ' ● ',
+            '●●●',
+            ' ● ',
         ],
         'large': [
-            ' ·○· ',
-            '○ ● ○',
-            '● ◉ ●',
-            '○ ● ○',
-            ' ·○· ',
+            '  ●  ',
+            ' ●●● ',
+            '●●●●●',
+            ' ●●● ',
+            '  ●  ',
         ],
         'gradient': [34, 46, 82, 156, 82],
         'fallback_color': Term.YELLOW,
@@ -281,7 +281,7 @@ def init_particles(cols, min_y, max_y, density=0.025):
     particles = []
     area = cols * (max_y - min_y + 1)
     count = int(area * density)
-    chars = ['·', '∘']
+    chars = ['.', '*']
     colors = [37, 38, 44, 45]
     for _ in range(count):
         x = random.randint(1, cols - 1)
@@ -319,11 +319,11 @@ def draw_line_between(buf, x0, y0, x1, y1, cols, rows, min_y):
         if step % 2 == 0:
             if min_y <= y0 < rows and 1 <= x0 < cols:
                 if dx > dy * 2:
-                    ch = '─'
+                    ch = '-'
                 elif dy > dx * 2:
-                    ch = '│'
+                    ch = '|'
                 else:
-                    ch = '·'
+                    ch = '.'
                 buf_set(buf, y0, x0, ch, style)
 
         if x0 == x1 and y0 == y1:
@@ -383,7 +383,7 @@ def render_agent_layer(agents, particles, frame, rows, cols, min_y, max_y):
                 fade_colors = agent.color_gradient
                 cidx = min(age, len(fade_colors) - 1)
                 tstyle = Term.color256(fade_colors[cidx])
-                buf_set(buf, ty, tx, '·', tstyle)
+                buf_set(buf, ty, tx, '.', tstyle)
 
     # Layer 4: Agent sprites
     for agent in agents.values():
