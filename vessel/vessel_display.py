@@ -114,7 +114,7 @@ AGENT_SPRITES = {
             ' ◇◆◇ ',
             '  ◇  ',
         ],
-        'gradient': [30, 36, 51, 123, 51],
+        'gradient': [44, 51, 87, 123, 87],
         'fallback_color': Term.CYAN,
     },
     'CP1': {
@@ -130,7 +130,7 @@ AGENT_SPRITES = {
             ' ▐▌▐▌',
             '  ▀  ',
         ],
-        'gradient': [55, 127, 201, 219, 201],
+        'gradient': [127, 163, 201, 219, 201],
         'fallback_color': Term.MAGENTA,
     },
     'CP9': {
@@ -146,7 +146,7 @@ AGENT_SPRITES = {
             '│░░░│',
             '└───┘',
         ],
-        'gradient': [58, 184, 226, 227, 226],
+        'gradient': [184, 220, 226, 228, 226],
         'fallback_color': Term.CYAN,
     },
     'msSunday': {
@@ -162,7 +162,7 @@ AGENT_SPRITES = {
             '○ ● ○',
             ' ·○· ',
         ],
-        'gradient': [22, 28, 46, 156, 46],
+        'gradient': [34, 46, 82, 156, 82],
         'fallback_color': Term.YELLOW,
     },
 }
@@ -282,7 +282,7 @@ def init_particles(cols, min_y, max_y, density=0.025):
     area = cols * (max_y - min_y + 1)
     count = int(area * density)
     chars = ['·', '∘']
-    colors = [24, 25, 30, 31]
+    colors = [37, 38, 44, 45]
     for _ in range(count):
         x = random.randint(1, cols - 1)
         y = random.randint(min_y, max_y)
@@ -306,7 +306,7 @@ def should_connect(a1, a2, max_dist=30):
 
 def draw_line_between(buf, x0, y0, x1, y1, cols, rows, min_y):
     """Bresenham's line algorithm — dotted, directional chars, dark gray."""
-    style = Term.DIM + Term.color256(240)
+    style = Term.color256(245)
     dx = abs(x1 - x0)
     dy = abs(y1 - y0)
     sx = 1 if x0 < x1 else -1
@@ -356,7 +356,7 @@ def render_agent_layer(agents, particles, frame, rows, cols, min_y, max_y):
         if p.twinkle:
             pstyle = Term.BOLD + Term.color256(p.color_code)
         else:
-            pstyle = Term.DIM + Term.color256(p.color_code)
+            pstyle = Term.color256(p.color_code)
         buf_set(buf, p.y, p.x, p.char, pstyle)
 
     # Layer 2: Connection lines between nearby agents
@@ -382,7 +382,7 @@ def render_agent_layer(agents, particles, frame, rows, cols, min_y, max_y):
                 # Fade: more dim as age increases
                 fade_colors = agent.color_gradient
                 cidx = min(age, len(fade_colors) - 1)
-                tstyle = Term.DIM + Term.color256(fade_colors[cidx])
+                tstyle = Term.color256(fade_colors[cidx])
                 buf_set(buf, ty, tx, '·', tstyle)
 
     # Layer 4: Agent sprites
@@ -397,7 +397,7 @@ def render_agent_layer(agents, particles, frame, rows, cols, min_y, max_y):
             color = Term.color256(agent.color_gradient[cidx])
             style = Term.BOLD + color
         else:
-            style = Term.DIM + Term.color256(agent.color_gradient[0])
+            style = Term.color256(agent.color_gradient[0])
 
         for row_idx, row_str in enumerate(sprite):
             for col_idx, ch in enumerate(row_str):
@@ -415,7 +415,7 @@ def render_agent_layer(agents, particles, frame, rows, cols, min_y, max_y):
             lbl_style = Term.BOLD + Term.color256(agent.color_gradient[2])
             label_text = agent.name + ' *'
         else:
-            lbl_style = Term.DIM + Term.color256(agent.color_gradient[0])
+            lbl_style = Term.color256(agent.color_gradient[0])
             label_text = agent.name
 
         for i, ch in enumerate(label_text):
