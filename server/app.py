@@ -28,7 +28,7 @@ import httpx
 import sys
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
-from config import SERVER_HOST, SERVER_PORT, VESSEL_SECRET
+from config import SERVER_HOST, SERVER_PORT, VESSEL_SECRET, AGENT_SESSION_TIMEOUT, AGENT_MAX_TURNS
 
 
 # --- Spawn Gate Enforcement ---
@@ -212,6 +212,13 @@ SOLANA_ADDR_RE = re.compile(r'^[1-9A-HJ-NP-Za-km-z]{32,44}$')
 
 # Whitelisted agent names (only these agents can trade through the relay)
 AGENT_WHITELIST = {"MsWednesday", "CP0", "CP1", "CP9", "msSunday"}
+
+# Agent context docs (Mac-side source of truth for agent identity)
+AGENT_CONTEXTS_DIR = Path(PROJECT_ROOT) / 'agent_contexts'
+
+# Active agent sessions (relay-side tracking)
+# session_id -> {agent_name, job_type, task_id, started_at, status, ...}
+_agent_sessions: dict = {}
 
 # MsWednesday wallet (for telegram feed proxy)
 MSWEDNESDAY_WALLET = "J5G2Z5yTgprEiwKEr3NLpKLghAVksez8twitJJwfiYsh"
@@ -416,12 +423,13 @@ def _check_manager_timeouts(state: dict) -> list:
 
 # --- App ---
 
-# Background task handle for manager timeout checker
+# Background task handles
 _timeout_task = None
+_session_watchdog_task = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _timeout_task
+    global _timeout_task, _session_watchdog_task
     print(f"[server] Vessel relay starting on {SERVER_HOST}:{SERVER_PORT}")
     init_db()
     print(f"[server] Task database initialized: {DB_PATH}")
@@ -430,15 +438,20 @@ async def lifespan(app: FastAPI):
     _timeout_task = asyncio.create_task(_manager_timeout_loop())
     print("[server] Manager timeout checker started (5min interval)")
 
+    # Start agent session watchdog
+    _session_watchdog_task = asyncio.create_task(_session_watchdog_loop())
+    print("[server] Agent session watchdog started (5min interval)")
+
     yield
 
-    # Cleanup background task
-    if _timeout_task:
-        _timeout_task.cancel()
-        try:
-            await _timeout_task
-        except asyncio.CancelledError:
-            pass
+    # Cleanup background tasks
+    for task in [_timeout_task, _session_watchdog_task]:
+        if task:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
     print("[server] Shutting down")
 
 app = FastAPI(title="VesselProject Relay", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
@@ -456,6 +469,82 @@ async def _manager_timeout_loop():
                 print(f"[server] Manager timeout: released {released}")
         except Exception as e:
             print(f"[server] Manager timeout check error: {e}")
+
+
+async def _session_watchdog_loop():
+    """Background: check agent session timeouts every 5 minutes."""
+    while True:
+        await asyncio.sleep(300)  # 5 minutes
+        try:
+            now = time.time()
+            timed_out = []
+            for session_id, session in list(_agent_sessions.items()):
+                if session.get("status") != "running":
+                    continue
+                elapsed = now - session.get("started_at", now)
+                if elapsed > AGENT_SESSION_TIMEOUT:
+                    timed_out.append(session_id)
+
+            for session_id in timed_out:
+                session = _agent_sessions[session_id]
+                agent_name = session.get("agent_name", "unknown")
+                task_id = session.get("task_id")
+
+                relay_log("SESSION_TIMEOUT", {
+                    "session_id": session_id,
+                    "agent_name": agent_name,
+                    "elapsed_hours": round((now - session["started_at"]) / 3600, 1),
+                })
+
+                # Send cancel to phone
+                if task_id:
+                    vessel_id = session.get("vessel_id", "phone-01")
+                    ws = vessels.get(vessel_id)
+                    if ws:
+                        try:
+                            await ws.send_json({"type": "cancel_task", "task_id": task_id})
+                        except Exception:
+                            pass
+
+                # Mark session as timed_out
+                session["status"] = "timed_out"
+                session["completed_at"] = now
+
+                # Release agent
+                await _auto_release_agent(agent_name)
+
+                # Notify Brandon
+                await _notify_brandon(
+                    f"**Session Timeout**: {agent_name}\n"
+                    f"Session {session_id} exceeded {AGENT_SESSION_TIMEOUT // 3600}h limit.\n"
+                    f"Agent released to idle."
+                )
+
+            # Check for orphaned sessions (phone disconnected while agents running)
+            for session_id, session in list(_agent_sessions.items()):
+                if session.get("status") != "running":
+                    continue
+                vessel_id = session.get("vessel_id", "phone-01")
+                if vessel_id not in vessels:
+                    agent_name = session.get("agent_name", "unknown")
+                    session["status"] = "orphaned"
+                    session["completed_at"] = now
+
+                    relay_log("SESSION_ORPHANED", {
+                        "session_id": session_id,
+                        "agent_name": agent_name,
+                        "reason": "vessel_disconnected",
+                    })
+
+                    await _auto_release_agent(agent_name)
+                    await _notify_brandon(
+                        f"**Orphaned Session**: {agent_name}\n"
+                        f"Phone disconnected while session {session_id} was running.\n"
+                        f"Agent released to idle."
+                    )
+
+        except Exception as e:
+            print(f"[server] Session watchdog error: {e}")
 
 
 # --- Automated Capital Flow Helpers ---
@@ -1457,8 +1546,8 @@ async def assign_agent(req: AssignRequest, request: Request, authorization: str 
         relay_log('ASSIGN_REJECTED', {'reason': 'invalid_mint', 'agent': req.agent_name})
         raise HTTPException(status_code=400, detail="Invalid token mint address")
 
-    if req.agent_type not in ('trader', 'manager'):
-        raise HTTPException(status_code=400, detail="agent_type must be 'trader' or 'manager'")
+    if req.agent_type not in ('trader', 'manager', 'content_manager'):
+        raise HTTPException(status_code=400, detail="agent_type must be 'trader', 'manager', or 'content_manager'")
 
     state = _read_availability()
     agents = state.get('agents', {})
@@ -1744,6 +1833,467 @@ async def feed_catalysts(request: Request, authorization: str = Header(), limit:
         )
 
 
+# --- Content Pipeline Proxy (read/write content, no spawn gate needed) ---
+
+
+class ContentScanRequest(BaseModel):
+    days_back: int = 7
+
+
+class ContentSubmitRequest(BaseModel):
+    lesson_id: str
+    content: str
+    platform: str = "twitter"
+    author_agent: str = "unknown"
+
+
+@app.post("/content/scan")
+async def relay_content_scan(req: ContentScanRequest, authorization: str = Header()):
+    """Proxy content scan to SXAN dashboard."""
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    if not AGENT_API_TOKEN:
+        raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
+
+    relay_log('CONTENT_SCAN', {'days_back': req.days_back})
+
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(
+                f"{SXAN_API_BASE}/api/content/scan",
+                json={'days_back': req.days_back},
+                headers={'Authorization': f'Bearer {AGENT_API_TOKEN}'},
+            )
+        if resp.status_code == 200:
+            return resp.json()
+        return JSONResponse(status_code=resp.status_code, content={'error': resp.text})
+    except Exception as e:
+        relay_log('CONTENT_SCAN_ERROR', {'error': str(e)})
+        return JSONResponse(status_code=502, content={'error': f'SXAN API unreachable: {str(e)}'})
+
+
+@app.get("/content/lessons")
+async def relay_content_lessons(authorization: str = Header(), category: str = None, limit: int = 50):
+    """Proxy content lessons list from SXAN dashboard."""
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    if not AGENT_API_TOKEN:
+        raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
+
+    limit = max(1, min(limit, 200))
+
+    params = {'limit': limit}
+    if category:
+        params['category'] = category
+
+    relay_log('CONTENT_LESSONS', {'category': category, 'limit': limit})
+
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get(
+                f"{SXAN_API_BASE}/api/content/lessons",
+                params=params,
+                headers={'Authorization': f'Bearer {AGENT_API_TOKEN}'},
+            )
+        if resp.status_code == 200:
+            return resp.json()
+        return JSONResponse(status_code=resp.status_code, content={'error': resp.text})
+    except Exception as e:
+        relay_log('CONTENT_LESSONS_ERROR', {'error': str(e)})
+        return JSONResponse(status_code=502, content={'error': f'SXAN API unreachable: {str(e)}'})
+
+
+@app.post("/content/submit")
+async def relay_content_submit(req: ContentSubmitRequest, request: Request, authorization: str = Header()):
+    """Proxy draft submission to SXAN dashboard."""
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    requester = get_requester(request)
+
+    if not AGENT_API_TOKEN:
+        raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
+
+    if len(req.content) > 2000:
+        raise HTTPException(status_code=400, detail="Content too long (max 2000 chars)")
+
+    relay_log('CONTENT_SUBMIT', {
+        'lesson_id': req.lesson_id,
+        'platform': req.platform,
+        'author': req.author_agent,
+        'requester': requester,
+    })
+
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.post(
+                f"{SXAN_API_BASE}/api/content/drafts",
+                json={
+                    'lesson_id': req.lesson_id,
+                    'content': req.content,
+                    'platform': req.platform,
+                    'author_agent': req.author_agent,
+                },
+                headers={'Authorization': f'Bearer {AGENT_API_TOKEN}'},
+            )
+        if resp.status_code == 200:
+            return resp.json()
+        return JSONResponse(status_code=resp.status_code, content={'error': resp.text})
+    except Exception as e:
+        relay_log('CONTENT_SUBMIT_ERROR', {'error': str(e)})
+        return JSONResponse(status_code=502, content={'error': f'SXAN API unreachable: {str(e)}'})
+
+
+@app.get("/content/queue")
+async def relay_content_queue(authorization: str = Header()):
+    """Proxy content queue from SXAN dashboard."""
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    if not AGENT_API_TOKEN:
+        raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
+
+    relay_log('CONTENT_QUEUE', {})
+
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get(
+                f"{SXAN_API_BASE}/api/content/queue",
+                headers={'Authorization': f'Bearer {AGENT_API_TOKEN}'},
+            )
+        if resp.status_code == 200:
+            return resp.json()
+        return JSONResponse(status_code=resp.status_code, content={'error': resp.text})
+    except Exception as e:
+        relay_log('CONTENT_QUEUE_ERROR', {'error': str(e)})
+        return JSONResponse(status_code=502, content={'error': f'SXAN API unreachable: {str(e)}'})
+
+
+# --- Agent Spawn & Session Management ---
+
+
+class SpawnRequest(BaseModel):
+    agent_name: str
+    job_type: str = "general"   # scanner, trader, manager, health, content_manager, general
+    prompt: str
+    token_mint: Optional[str] = None
+    max_turns: int = AGENT_MAX_TURNS
+    mode: str = "oneshot"       # "oneshot" or "continuous"
+    vessel_id: str = "phone-01"
+
+
+@app.post("/agents/spawn")
+async def spawn_agent(req: SpawnRequest, request: Request, authorization: str = Header()):
+    """
+    Spawn an agent on the phone vessel via relay.
+    Only MsWednesday can spawn agents.
+
+    Flow:
+    1. Validate agent_name in whitelist, requester is MsWednesday
+    2. Gate check (verify spawn gate exists and is valid)
+    3. Load agent context (CLAUDE.md) from Mac-side storage
+    4. Mark agent as busy
+    5. Create task and queue for phone
+    6. Return session_id for tracking
+    """
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    requester = get_requester(request)
+
+    # Only MsWednesday can spawn agents
+    if requester != "MsWednesday":
+        relay_log("SPAWN_DENIED", {
+            "agent_name": req.agent_name,
+            "requester": requester,
+            "reason": "not_spawn_authority",
+        })
+        raise HTTPException(
+            status_code=403,
+            detail="Only MsWednesday can spawn agents"
+        )
+
+    # Validate agent name
+    if req.agent_name not in AGENT_WHITELIST or req.agent_name == "MsWednesday":
+        relay_log("SPAWN_DENIED", {
+            "agent_name": req.agent_name,
+            "reason": "invalid_agent",
+        })
+        raise HTTPException(status_code=400, detail=f"Cannot spawn '{req.agent_name}'")
+
+    # Gate check
+    if not _verify_agent_gate(req.agent_name):
+        relay_log("SPAWN_GATE_DENIED", {
+            "agent_name": req.agent_name,
+            "requester": requester,
+        })
+        await _notify_brandon(
+            f"**SPAWN GATE DENIED**: {req.agent_name}\n"
+            f"MsWednesday tried to spawn without valid gate."
+        )
+        raise HTTPException(
+            status_code=403,
+            detail=f"Agent '{req.agent_name}' has no valid spawn gate"
+        )
+
+    # Check agent isn't already busy
+    avail_state = _read_availability()
+    agents = avail_state.get("agents", {})
+    if req.agent_name in agents and agents[req.agent_name].get("status") == "busy":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Agent '{req.agent_name}' is already busy"
+        )
+
+    # Check vessel is connected
+    if req.vessel_id not in vessels:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Vessel '{req.vessel_id}' is not connected"
+        )
+
+    # Load agent context (CLAUDE.md) from Mac-side storage
+    identity = ""
+    context_file = AGENT_CONTEXTS_DIR / req.agent_name / "CLAUDE.md"
+    if context_file.exists():
+        try:
+            identity = context_file.read_text()
+        except IOError as e:
+            print(f"[spawn] Warning: could not read context for {req.agent_name}: {e}")
+
+    # Generate session ID
+    session_id = str(uuid.uuid4())[:8]
+
+    # Mark agent as busy
+    agent_type_map = {
+        "scanner": "trader",
+        "trader": "trader",
+        "manager": "manager",
+        "health": "manager",
+        "content_manager": "content_manager",
+        "general": "trader",
+    }
+    avail_type = agent_type_map.get(req.job_type, "trader")
+    now_str = datetime.utcnow().isoformat() + "Z"
+
+    if req.agent_name not in agents:
+        agents[req.agent_name] = {
+            "status": "idle", "position": None,
+            "assigned_at": None, "type": None, "last_checkin": None,
+        }
+    agents[req.agent_name]["status"] = "busy"
+    agents[req.agent_name]["position"] = req.token_mint
+    agents[req.agent_name]["assigned_at"] = now_str
+    agents[req.agent_name]["type"] = avail_type
+    if avail_type == "manager":
+        agents[req.agent_name]["last_checkin"] = now_str
+    _write_availability(avail_state)
+
+    # Create task for phone
+    task_id = str(uuid.uuid4())[:8]
+    task_dict = {
+        "task_id": task_id,
+        "vessel_id": req.vessel_id,
+        "task_type": "agent",
+        "payload": {
+            "prompt": req.prompt,
+            "agent_name": req.agent_name,
+            "max_turns": req.max_turns,
+            "identity": identity,
+            "job_type": req.job_type,
+            "session_id": session_id,
+        },
+        "priority": 1,
+        "timeout": AGENT_SESSION_TIMEOUT,
+        "status": "queued",
+        "submitted_at": time.time(),
+        "result": None,
+        "completed_at": None,
+    }
+    tasks[task_id] = task_dict
+    save_task(task_dict)
+
+    # Queue for vessel
+    if req.vessel_id not in task_queue:
+        task_queue[req.vessel_id] = asyncio.Queue()
+    await task_queue[req.vessel_id].put(task_dict)
+
+    # Track session
+    _agent_sessions[session_id] = {
+        "agent_name": req.agent_name,
+        "job_type": req.job_type,
+        "task_id": task_id,
+        "vessel_id": req.vessel_id,
+        "mode": req.mode,
+        "started_at": time.time(),
+        "status": "running",
+        "prompt_preview": req.prompt[:200],
+        "completed_at": None,
+        "result": None,
+    }
+
+    relay_log("AGENT_SPAWNED", {
+        "session_id": session_id,
+        "agent_name": req.agent_name,
+        "job_type": req.job_type,
+        "task_id": task_id,
+        "mode": req.mode,
+        "requester": requester,
+    })
+
+    return {
+        "success": True,
+        "session_id": session_id,
+        "agent_name": req.agent_name,
+        "job_type": req.job_type,
+        "task_id": task_id,
+        "status": "dispatched",
+    }
+
+
+@app.get("/agents/context/{agent_name}")
+async def get_agent_context(agent_name: str, authorization: str = Header()):
+    """
+    Get agent identity docs from Mac-side storage.
+    Used by phone to sync agent docs on startup.
+    """
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    if agent_name not in AGENT_WHITELIST or agent_name == "MsWednesday":
+        raise HTTPException(status_code=400, detail=f"No context for '{agent_name}'")
+
+    context_file = AGENT_CONTEXTS_DIR / agent_name / "CLAUDE.md"
+    config_file = AGENT_CONTEXTS_DIR / agent_name / "config.json"
+
+    result = {"agent_name": agent_name, "identity": "", "config": {}}
+
+    if context_file.exists():
+        try:
+            result["identity"] = context_file.read_text()
+        except IOError:
+            pass
+
+    if config_file.exists():
+        try:
+            result["config"] = json.loads(config_file.read_text())
+        except (IOError, json.JSONDecodeError):
+            pass
+
+    return result
+
+
+@app.get("/agents/sessions")
+async def list_agent_sessions(authorization: str = Header()):
+    """List all agent sessions (active and recent)."""
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    sessions = []
+    for session_id, session in _agent_sessions.items():
+        sessions.append({
+            "session_id": session_id,
+            "agent_name": session.get("agent_name"),
+            "job_type": session.get("job_type"),
+            "status": session.get("status"),
+            "mode": session.get("mode"),
+            "started_at": session.get("started_at"),
+            "completed_at": session.get("completed_at"),
+            "elapsed_seconds": round(
+                (session.get("completed_at") or time.time()) - session.get("started_at", time.time()),
+                1,
+            ),
+        })
+
+    return {"sessions": sessions, "total": len(sessions)}
+
+
+@app.get("/agents/sessions/{session_id}")
+async def get_agent_session(session_id: str, authorization: str = Header()):
+    """Get detailed status for a specific agent session."""
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    session = _agent_sessions.get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    # If session has a task_id, check for result
+    task_id = session.get("task_id")
+    result = None
+    if task_id and task_id in tasks:
+        task = tasks[task_id]
+        if task.get("result"):
+            result = task["result"]
+            # Update session status from task result
+            if task.get("status") in ("completed", "error", "timeout"):
+                session["status"] = task["status"]
+                session["completed_at"] = task.get("completed_at", time.time())
+                session["result"] = result
+
+    return {
+        "session_id": session_id,
+        **session,
+        "result_preview": str(result)[:500] if result else None,
+    }
+
+
+@app.post("/agents/sessions/{session_id}/kill")
+async def kill_agent_session(session_id: str, request: Request, authorization: str = Header()):
+    """Cancel a running agent session."""
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    requester = get_requester(request)
+
+    session = _agent_sessions.get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    if session.get("status") != "running":
+        return {
+            "success": False,
+            "error": f"Session is not running (status: {session.get('status')})",
+        }
+
+    task_id = session.get("task_id")
+    vessel_id = session.get("vessel_id", "phone-01")
+    agent_name = session.get("agent_name", "unknown")
+
+    # Send cancel to phone
+    ws = vessels.get(vessel_id)
+    if ws and task_id:
+        try:
+            await ws.send_json({"type": "cancel_task", "task_id": task_id})
+        except Exception as e:
+            relay_log("SESSION_KILL_SEND_ERROR", {
+                "session_id": session_id,
+                "error": str(e),
+            })
+
+    # Mark session as killed
+    session["status"] = "killed"
+    session["completed_at"] = time.time()
+
+    # Release agent
+    await _auto_release_agent(agent_name)
+
+    relay_log("SESSION_KILLED", {
+        "session_id": session_id,
+        "agent_name": agent_name,
+        "requester": requester,
+    })
+
+    return {
+        "success": True,
+        "session_id": session_id,
+        "agent_name": agent_name,
+        "status": "killed",
+    }
+
+
 # --- WebSocket (for vessel to connect and receive tasks) ---
 
 @app.websocket("/ws/{vessel_id}")
@@ -1804,6 +2354,30 @@ async def _receive_results(websocket: WebSocket, vessel_id: str):
                 # Persist the completed task
                 save_task(tasks[task_id])
                 print(f"[server] Result for task {task_id}: {msg.get('status')}")
+
+                # Update agent session if this was a spawned agent task
+                result_data = msg.get("result", {})
+                session_id = result_data.get("session_id") if isinstance(result_data, dict) else None
+                if session_id and session_id in _agent_sessions:
+                    session = _agent_sessions[session_id]
+                    session["status"] = msg.get("status", "completed")
+                    session["completed_at"] = time.time()
+                    session["result"] = result_data
+                    agent_name = session.get("agent_name")
+                    if agent_name:
+                        await _auto_release_agent(agent_name)
+                    relay_log("SESSION_COMPLETED", {
+                        "session_id": session_id,
+                        "agent_name": agent_name,
+                        "status": session["status"],
+                        "turns": result_data.get("turns"),
+                    })
+
+        elif msg.get("type") == "cancel_ack":
+            task_id = msg.get("task_id", "")
+            cancelled = msg.get("cancelled", False)
+            print(f"[server] Cancel ack for {task_id}: {'ok' if cancelled else 'failed'}")
+
         elif msg.get("type") == "heartbeat":
             await websocket.send_json({"type": "heartbeat_ack"})
 

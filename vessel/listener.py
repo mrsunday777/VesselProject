@@ -14,17 +14,19 @@ import time
 sys.path.insert(0, "..")
 from config import VESSEL_SECRET, VESSEL_ID, SERVER_PORT
 
-from executor import execute_task
+from executor import execute_task, cancel_session
 
 
 # Server URL - set via env var (your computer's IP or a deployed server)
-# Default to 192.168.1.146 (Brandon's desktop on home network)
-# Override with: export VESSEL_SERVER_URL=ws://your-ip:8777
 DEFAULT_SERVER_IP = "100.78.3.119"
 SERVER_URL = os.getenv("VESSEL_SERVER_URL", f"ws://{DEFAULT_SERVER_IP}:{SERVER_PORT}")
 
 RECONNECT_DELAY = 5      # seconds between reconnect attempts
 HEARTBEAT_INTERVAL = 30   # seconds between heartbeats
+
+# Track running agent tasks for cancellation
+# task_id -> session_id mapping
+_running_agent_tasks = {}
 
 
 async def connect_and_listen():
@@ -76,8 +78,34 @@ async def _handle_messages(ws):
             task_id = task["task_id"]
             print(f"[vessel] Received task {task_id} ({task.get('task_type', 'unknown')})")
 
+            # Track agent tasks for cancellation
+            if task.get("task_type") == "agent":
+                session_id = task.get("payload", {}).get("session_id", task_id)
+                _running_agent_tasks[task_id] = session_id
+
             # Execute in background so we can keep receiving
             asyncio.create_task(_execute_and_report(ws, task))
+
+        elif msg.get("type") == "cancel_task":
+            # Cancel a running agent session
+            task_id = msg.get("task_id", "")
+            session_id = _running_agent_tasks.get(task_id)
+            if session_id:
+                cancelled = cancel_session(session_id)
+                print(f"[vessel] Cancel requested for task {task_id} (session {session_id}): {'ok' if cancelled else 'not found'}")
+                await ws.send(json.dumps({
+                    "type": "cancel_ack",
+                    "task_id": task_id,
+                    "cancelled": cancelled,
+                }))
+            else:
+                print(f"[vessel] Cancel requested for unknown task {task_id}")
+                await ws.send(json.dumps({
+                    "type": "cancel_ack",
+                    "task_id": task_id,
+                    "cancelled": False,
+                    "error": "task not found",
+                }))
 
         elif msg.get("type") == "heartbeat_ack":
             pass  # server acknowledged our heartbeat
@@ -110,6 +138,10 @@ async def _execute_and_report(ws, task: dict):
             "result": {"error": str(e)},
         }))
         print(f"[vessel] Task {task_id} failed: {e}")
+
+    finally:
+        # Clean up tracking
+        _running_agent_tasks.pop(task_id, None)
 
 
 async def _heartbeat(ws):

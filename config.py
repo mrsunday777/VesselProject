@@ -8,6 +8,10 @@ ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
 MAX_TASK_OUTPUT = 10000
 TASK_TIMEOUT = 300
 
+# Agent session limits
+AGENT_SESSION_TIMEOUT = 4 * 3600  # 4 hours max per agent session
+AGENT_MAX_TURNS = 20              # Max agentic loop turns per session
+
 # Load API key from secrets file (not tracked by git)
 ANTHROPIC_API_KEY = ""
 try:
