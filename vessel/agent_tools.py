@@ -242,43 +242,9 @@ VESSEL_TOOL_DEFINITIONS = [
             "properties": {},
         },
     },
-    {
-        "name": "assign_agent",
-        "description": "Assign an agent to a position (marks them as busy). Used when delegating work.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "agent_name": {
-                    "type": "string",
-                    "description": "Agent to assign (e.g. 'CP0', 'CP1', 'CP9', 'msSunday')",
-                },
-                "token_mint": {
-                    "type": "string",
-                    "description": "Token mint they're managing (required for trader type)",
-                },
-                "agent_type": {
-                    "type": "string",
-                    "description": "Job type: 'trader', 'manager', or 'content_manager'",
-                    "default": "trader",
-                },
-            },
-            "required": ["agent_name", "token_mint"],
-        },
-    },
-    {
-        "name": "release_agent",
-        "description": "Release an agent from their assignment (marks them as idle).",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "agent_name": {
-                    "type": "string",
-                    "description": "Agent to release",
-                },
-            },
-            "required": ["agent_name"],
-        },
-    },
+    # assign_agent and release_agent REMOVED — agent busy/idle lifecycle
+    # is handled by spawn sessions (auto-release on end/kill/timeout).
+    # Emergency release: POST /agents/release (server endpoint, not agent tool).
     {
         "name": "agent_checkin",
         "description": "Manager heartbeat — resets the 5h timeout clock. Call periodically when running as a manager.",
@@ -376,12 +342,74 @@ VESSEL_TOOL_DEFINITIONS = [
 ]
 
 
-def get_tool_definitions():
-    """Return the Claude API tool definitions list."""
-    return VESSEL_TOOL_DEFINITIONS
+# --- Per-Job-Type Tool Access Matrix ---
+# Maps job_type -> set of allowed tool names.
+# "general" is permissive (all tools) as a safe fallback.
+# Defense-in-depth: enforced at both get_tool_definitions() and execute_tool().
+
+TOOL_ACCESS_MATRIX = {
+    "scanner": {
+        "get_state", "my_positions", "wallet_status", "notify",
+        "telegram_feed", "graduating_tokens", "new_launches", "catalysts",
+        "transactions", "agents_available", "agent_checkin", "wait",
+    },
+    "trader": {
+        "get_state", "my_positions", "wallet_status", "buy", "sell",
+        "transfer", "transfer_sol", "notify", "telegram_feed",
+        "graduating_tokens", "new_launches", "catalysts", "transactions",
+        "agents_available", "agent_checkin", "wait",
+    },
+    "manager": {
+        "get_state", "my_positions", "wallet_status", "buy", "sell",
+        "transfer", "transfer_sol", "notify", "telegram_feed",
+        "graduating_tokens", "new_launches", "catalysts", "transactions",
+        "agents_available", "agent_checkin", "wait",
+    },
+    "health": {
+        "get_state", "my_positions", "wallet_status", "notify",
+        "transactions", "agents_available", "agent_checkin", "wait",
+    },
+    "health_monitor": {
+        "get_state", "my_positions", "wallet_status", "notify",
+        "transactions", "agents_available", "agent_checkin", "wait",
+    },
+    "compliance_counsel": {
+        "get_state", "my_positions", "wallet_status", "notify",
+        "transactions", "agents_available", "wait",
+        "compliance_check", "compliance_log", "compliance_report",
+    },
+    "compliance": {
+        "get_state", "my_positions", "wallet_status", "notify",
+        "transactions", "agents_available", "wait",
+        "compliance_check", "compliance_log", "compliance_report",
+    },
+    "content_manager": {
+        "get_state", "my_positions", "wallet_status", "notify",
+        "telegram_feed", "graduating_tokens", "new_launches", "catalysts",
+        "transactions", "agents_available", "wait",
+    },
+    "news_reporter": {
+        "get_state", "my_positions", "wallet_status", "notify",
+        "telegram_feed", "graduating_tokens", "new_launches", "catalysts",
+        "transactions", "agents_available", "wait",
+    },
+    "scout": {
+        "get_state", "my_positions", "wallet_status", "notify",
+        "telegram_feed", "graduating_tokens", "new_launches", "catalysts",
+        "transactions", "agents_available", "wait",
+    },
+    # "general" is the permissive fallback — all tools allowed
+    "general": {t["name"] for t in VESSEL_TOOL_DEFINITIONS},
+}
 
 
-async def execute_tool(tool_name: str, tool_input: dict, agent_name: str) -> dict:
+def get_tool_definitions(job_type: str = "general"):
+    """Return the Claude API tool definitions list, filtered by job_type."""
+    allowed = TOOL_ACCESS_MATRIX.get(job_type, TOOL_ACCESS_MATRIX["general"])
+    return [t for t in VESSEL_TOOL_DEFINITIONS if t["name"] in allowed]
+
+
+async def execute_tool(tool_name: str, tool_input: dict, agent_name: str, job_type: str = "general") -> dict:
     """
     Execute a vessel tool call and return the result.
 
@@ -389,10 +417,19 @@ async def execute_tool(tool_name: str, tool_input: dict, agent_name: str) -> dic
         tool_name: Name of the tool to execute
         tool_input: Tool input parameters from Claude
         agent_name: Identity of the calling agent (for attribution)
+        job_type: Agent's job type for tool access control
 
     Returns:
         Dict with tool execution result
     """
+    # Defense-in-depth: enforce tool access matrix at execution time
+    allowed = TOOL_ACCESS_MATRIX.get(job_type, TOOL_ACCESS_MATRIX["general"])
+    if tool_name not in allowed:
+        return {
+            "error": f"Tool '{tool_name}' not allowed for job_type '{job_type}'",
+            "allowed_tools": sorted(allowed),
+        }
+
     tools = VesselTools(name=agent_name)
 
     try:
@@ -470,15 +507,8 @@ async def execute_tool(tool_name: str, tool_input: dict, agent_name: str) -> dic
             result = tools.agents_available()
             return result or {"error": "Could not reach relay"}
 
-        elif tool_name == "assign_agent":
-            return tools.assign_agent(
-                agent_name=tool_input["agent_name"],
-                token_mint=tool_input["token_mint"],
-                agent_type=tool_input.get("agent_type", "trader"),
-            )
-
-        elif tool_name == "release_agent":
-            return tools.release_agent(agent_name=tool_input["agent_name"])
+        elif tool_name in ("assign_agent", "release_agent"):
+            return {"error": "DEPRECATED: assign_agent/release_agent removed. Agent lifecycle is managed by spawn sessions."}
 
         elif tool_name == "agent_checkin":
             return tools.agent_checkin(agent_name)
@@ -518,13 +548,14 @@ async def execute_tool(tool_name: str, tool_input: dict, agent_name: str) -> dic
         return {"error": f"Tool execution failed: {str(e)}"}
 
 
-async def execute_tool_calls(content_blocks: list, agent_name: str) -> list:
+async def execute_tool_calls(content_blocks: list, agent_name: str, job_type: str = "general") -> list:
     """
     Process all tool_use blocks from a Claude response.
 
     Args:
         content_blocks: The 'content' array from Claude's response
         agent_name: Identity of the calling agent
+        job_type: Agent's job type for tool access control
 
     Returns:
         List of tool_result content blocks for the next message
@@ -538,7 +569,7 @@ async def execute_tool_calls(content_blocks: list, agent_name: str) -> list:
         tool_input = block.get("input", {})
         tool_id = block["id"]
 
-        result = await execute_tool(tool_name, tool_input, agent_name)
+        result = await execute_tool(tool_name, tool_input, agent_name, job_type)
 
         results.append({
             "type": "tool_result",

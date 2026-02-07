@@ -761,6 +761,68 @@ class VesselTools:
 
         return result
 
+    # --- Content Pipeline (Social Media Manager role) ---
+
+    def scan_content(self, days_back=7):
+        """
+        Trigger content scan — extracts lessons from logs, commits, audits.
+
+        Args:
+            days_back: How many days back to scan (1-30, default 7)
+
+        Returns:
+            {'success': bool, 'total_found': int, 'new_added': int}
+        """
+        self._log('CONTENT_SCAN', {'days_back': days_back})
+        return self._request('POST', '/content/scan', {'days_back': days_back})
+
+    def get_lessons(self, category=None, limit=50):
+        """
+        Get extracted lessons from content store.
+
+        Args:
+            category: Filter by category (trade_lesson, system_insight, etc.)
+            limit: Max lessons to return (1-200, default 50)
+
+        Returns:
+            {'lessons': [...], 'count': int}
+        """
+        self._log('CONTENT_LESSONS', {'category': category, 'limit': limit})
+        params = f'limit={limit}'
+        if category:
+            params += f'&category={category}'
+        return self._request('GET', f'/content/lessons?{params}')
+
+    def submit_draft(self, lesson_id, content, platform='twitter'):
+        """
+        Submit a draft post for review.
+
+        Args:
+            lesson_id: ID of the lesson this draft is based on
+            content: The post text (max 2000 chars, will be re-anonymized)
+            platform: Target platform (default 'twitter')
+
+        Returns:
+            {'success': bool, 'draft': {...}}
+        """
+        self._log('CONTENT_SUBMIT_DRAFT', {'lesson_id': lesson_id, 'platform': platform})
+        return self._request('POST', '/content/submit', {
+            'lesson_id': lesson_id,
+            'content': content,
+            'platform': platform,
+            'author_agent': self.name or 'unknown',
+        })
+
+    def get_content_queue(self):
+        """
+        Get the full content queue (pending, approved, published, rejected).
+
+        Returns:
+            {'pending_review': [...], 'approved': [...], 'published': [...], ...}
+        """
+        self._log('CONTENT_QUEUE', {})
+        return self._request('GET', '/content/queue')
+
     def check_trigger(self, tp_pct=None, sl_pct=None):
         """
         Check if TP or SL condition is met based on live state.
@@ -805,8 +867,8 @@ class VesselTools:
         try:
             with open(self.log_file, 'a') as f:
                 f.write(json.dumps(entry) + '\n')
-        except IOError:
-            pass
+        except IOError as e:
+            print(f"[vessel_tools] WARNING: Agent log write failed: {e}", file=sys.stderr)
 
 
 # --- Convenience: module-level singleton ---

@@ -181,6 +181,22 @@ AGENT_SPRITES = {
         'gradient': [196, 203, 210, 217, 210],
         'fallback_color': Term.RED,
     },
+    'Chopper': {
+        'small': [
+            ' ✦ ',
+            '✦✦✦',
+            ' ✦ ',
+        ],
+        'large': [
+            '  ✦  ',
+            ' ✦✦✦ ',
+            '✦✦✦✦✦',
+            ' ✦✦✦ ',
+            '  ✦  ',
+        ],
+        'gradient': [208, 214, 220, 226, 220],
+        'fallback_color': Term.YELLOW,
+    },
 }
 
 
@@ -550,6 +566,7 @@ ASSIGN_TYPE_TO_TOOL = {
     'health': 'health',
     'content_manager': 'content',
     'compliance_counsel': 'compliance',
+    'scout': 'scout',
 }
 
 
@@ -643,6 +660,7 @@ def render_agent_status_panel(agent_avail, activity, rows, cols, agent_sessions=
         ('Transfers',  'transfers',  Term.MAGENTA),
         ('Content',    'content',    Term.WHITE),
         ('Compliance', 'compliance', Term.BRIGHT_RED),
+        ('Scout',      'scout',      Term.BRIGHT_MAGENTA),
         ('Sessions',   'sessions',   Term.GREEN),
     ]
 
@@ -668,7 +686,7 @@ def render_agent_status_panel(agent_avail, activity, rows, cols, agent_sessions=
         row += 1
 
     # Show idle agents
-    all_agents = ['CP0', 'CP1', 'CP9', 'msSunday', 'msCounsel']
+    all_agents = ['CP0', 'CP1', 'CP9', 'msSunday', 'msCounsel', 'Chopper']
     idle_agents = [a for a in all_agents if a not in seen_agents]
 
     if idle_agents:

@@ -46,11 +46,74 @@ AGENT_GATE_WORKSPACES = {
     'CP0': Path.home() / 'Desktop' / 'cp0',  # alias
     'CP1': Path.home() / 'Desktop' / 'cp1',  # alias
     'msCounsel': Path.home() / 'Desktop' / 'msCounsel',
+    'Chopper': Path.home() / 'Desktop' / 'Chopper',
 }
 
 # Cache: agent_name -> (valid_until_epoch, is_authorized, gate_mtime)
 _gate_cache: dict = {}
 _GATE_CACHE_TTL = 60  # seconds
+
+
+# --- Rate Limiting (in-memory sliding window) ---
+
+# agent_name -> list of timestamps
+_rate_limit_trades: dict = {}  # Trade operations (buy/sell/transfer)
+_rate_limit_reads: dict = {}   # Read operations (wallet/transactions/positions)
+
+RATE_LIMIT_TRADES_MAX = 5      # max trade operations per window
+RATE_LIMIT_TRADES_WINDOW = 60  # seconds
+RATE_LIMIT_READS_MAX = 30      # max read operations per window
+RATE_LIMIT_READS_WINDOW = 60   # seconds
+
+
+def _rate_limit_check(agent_name: str, bucket: dict, max_requests: int, window: int, action: str) -> bool:
+    """
+    Sliding window rate limiter. Returns True if request is allowed, False if rate-limited.
+    Prunes expired entries on each call.
+    """
+    now = time.time()
+    cutoff = now - window
+
+    if agent_name not in bucket:
+        bucket[agent_name] = []
+
+    # Prune expired entries
+    bucket[agent_name] = [ts for ts in bucket[agent_name] if ts > cutoff]
+
+    if len(bucket[agent_name]) >= max_requests:
+        relay_log('RATE_LIMITED', {
+            'agent_name': agent_name,
+            'blocked_action': action,
+            'count': len(bucket[agent_name]),
+            'max': max_requests,
+            'window_seconds': window,
+        })
+        return False
+
+    bucket[agent_name].append(now)
+    return True
+
+
+def _check_trade_rate_limit(agent_name: str, action: str):
+    """Check trade rate limit. Raises HTTPException(429) if exceeded."""
+    if agent_name == 'MsWednesday':
+        return  # Apex authority not rate-limited
+    if not _rate_limit_check(agent_name, _rate_limit_trades, RATE_LIMIT_TRADES_MAX, RATE_LIMIT_TRADES_WINDOW, action):
+        raise HTTPException(
+            status_code=429,
+            detail=f"Rate limit exceeded: {RATE_LIMIT_TRADES_MAX} trades per {RATE_LIMIT_TRADES_WINDOW}s for '{agent_name}'"
+        )
+
+
+def _check_read_rate_limit(agent_name: str, action: str):
+    """Check read rate limit. Raises HTTPException(429) if exceeded."""
+    if agent_name == 'MsWednesday':
+        return  # Apex authority not rate-limited
+    if not _rate_limit_check(agent_name, _rate_limit_reads, RATE_LIMIT_READS_MAX, RATE_LIMIT_READS_WINDOW, action):
+        raise HTTPException(
+            status_code=429,
+            detail=f"Rate limit exceeded: {RATE_LIMIT_READS_MAX} reads per {RATE_LIMIT_READS_WINDOW}s for '{agent_name}'"
+        )
 
 _spawn_secret: bytes = b''
 try:
@@ -74,10 +137,13 @@ def _verify_agent_gate(agent_name: str) -> bool:
     if agent_name == 'MsWednesday':
         return True
 
-    # If spawn secret not loaded, we can't verify — fail open with warning
+    # If spawn secret not loaded, we can't verify — FAIL CLOSED
     if not _spawn_secret:
-        print(f"[gate] WARNING: No spawn secret, cannot verify {agent_name}")
-        return True  # Fail open if no secret (relay shouldn't block if misconfigured)
+        relay_log('GATE_FAIL_CLOSED', {
+            'agent_name': agent_name,
+            'reason': 'spawn_secret_missing',
+        })
+        return False
 
     workspace = AGENT_GATE_WORKSPACES.get(agent_name)
     if not workspace:
@@ -168,8 +234,8 @@ async def _gate_check_or_403(agent_name: str, action: str, requester: str = None
                         },
                         headers={'Authorization': f'Bearer {AGENT_API_TOKEN}'},
                     )
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[gate] WARNING: Failed to notify Brandon about gate denial: {e}", file=sys.stderr)
         raise HTTPException(
             status_code=403,
             detail=f"Agent '{agent_name}' has no valid spawn gate. Trade operations require MsWednesday authorization."
@@ -203,8 +269,8 @@ try:
             for line in f:
                 if line.startswith('AGENT_API_TOKEN='):
                     AGENT_API_TOKEN = line.split('=', 1)[1].strip().strip('"').strip("'")
-except Exception:
-    pass
+except Exception as e:
+    print(f"[server] WARNING: Failed to load AGENT_API_TOKEN: {e}", file=sys.stderr)
 
 # Relay audit log
 RELAY_LOG = Path(PROJECT_ROOT) / 'relay_audit.log'
@@ -213,7 +279,7 @@ RELAY_LOG = Path(PROJECT_ROOT) / 'relay_audit.log'
 SOLANA_ADDR_RE = re.compile(r'^[1-9A-HJ-NP-Za-km-z]{32,44}$')
 
 # Whitelisted agent names (only these agents can trade through the relay)
-AGENT_WHITELIST = {"MsWednesday", "CP0", "CP1", "CP9", "msSunday", "msCounsel"}
+AGENT_WHITELIST = {"MsWednesday", "CP0", "CP1", "CP9", "msSunday", "msCounsel", "Chopper"}
 
 # Agent context docs (Mac-side source of truth for agent identity)
 AGENT_CONTEXTS_DIR = Path(PROJECT_ROOT) / 'agent_contexts'
@@ -341,6 +407,66 @@ def get_requester(request: Request) -> Optional[str]:
     return None
 
 
+# Job types that are exempt from read-data isolation (can read other agents' data)
+HEALTH_JOB_TYPES = {"health", "health_monitor"}
+
+
+def _check_agent_authorization(requester: Optional[str], target_agent: str, action: str):
+    """
+    Verify the requester is authorized to act on the target agent's wallet.
+    MsWednesday is exempt (apex authority).
+    Raises HTTPException(403) if unauthorized.
+    """
+    if requester == 'MsWednesday':
+        return  # Apex authority
+    if requester and requester != target_agent:
+        relay_log(f'{action}_CROSS_AGENT_DENIED', {
+            'requester': requester,
+            'target_agent': target_agent,
+            'reason': 'cross_agent_not_allowed',
+        })
+        raise HTTPException(
+            status_code=403,
+            detail=f"Agent '{requester}' cannot perform {action} on '{target_agent}' wallet"
+        )
+
+
+def _get_requester_job_type(requester: Optional[str]) -> Optional[str]:
+    """Look up the active job_type for a requester from agent sessions."""
+    if not requester:
+        return None
+    for session in _agent_sessions.values():
+        if session.get("agent_name") == requester and session.get("status") == "running":
+            return session.get("job_type")
+    return None
+
+
+def _check_read_authorization(requester: Optional[str], target_agent: str, action: str):
+    """
+    Verify the requester is authorized to read the target agent's data.
+    MsWednesday exempt (apex authority).
+    Health monitors exempt (need cross-agent visibility).
+    Raises HTTPException(403) if unauthorized.
+    """
+    if requester == 'MsWednesday':
+        return  # Apex authority
+    if requester and requester != target_agent:
+        # Check if requester is a health monitor
+        job_type = _get_requester_job_type(requester)
+        if job_type in HEALTH_JOB_TYPES:
+            return  # Health monitors can read any agent's data
+        relay_log(f'{action}_CROSS_AGENT_READ_DENIED', {
+            'requester': requester,
+            'target_agent': target_agent,
+            'requester_job_type': job_type,
+            'reason': 'cross_agent_read_not_allowed',
+        })
+        raise HTTPException(
+            status_code=403,
+            detail=f"Agent '{requester}' cannot read '{target_agent}' data"
+        )
+
+
 def relay_log(action: str, details: dict):
     """Audit log for all relay operations. Every agent action is recorded."""
     entry = {
@@ -351,8 +477,8 @@ def relay_log(action: str, details: dict):
     try:
         with open(RELAY_LOG, 'a') as f:
             f.write(json.dumps(entry) + '\n')
-    except IOError:
-        pass
+    except IOError as e:
+        print(f"[relay] CRITICAL: Audit log write failed for {action}: {e}", file=sys.stderr)
     print(f"[relay] {action}: {json.dumps(details)}")
 
 
@@ -369,6 +495,7 @@ def _read_availability() -> dict:
                 'CP9': {'status': 'idle', 'position': None, 'assigned_at': None, 'type': None, 'last_checkin': None},
                 'msSunday': {'status': 'idle', 'position': None, 'assigned_at': None, 'type': None, 'last_checkin': None},
                 'msCounsel': {'status': 'idle', 'position': None, 'assigned_at': None, 'type': None, 'last_checkin': None},
+                'Chopper': {'status': 'idle', 'position': None, 'assigned_at': None, 'type': None, 'last_checkin': None},
             },
         }
     try:
@@ -390,8 +517,8 @@ def _write_availability(state: dict):
     except Exception:
         try:
             os.unlink(tmp_path)
-        except OSError:
-            pass
+        except OSError as e:
+            print(f"[server] WARNING: Failed to clean up temp file {tmp_path}: {e}", file=sys.stderr)
         raise
 
 
@@ -424,8 +551,8 @@ def _check_manager_timeouts(state: dict) -> list:
                 data['last_checkin'] = None
                 released.append(agent_name)
                 relay_log('MANAGER_TIMEOUT', {'agent': agent_name, 'elapsed_hours': round(elapsed_hours, 1)})
-        except (ValueError, TypeError):
-            pass
+        except (ValueError, TypeError) as e:
+            print(f"[server] WARNING: Failed to parse checkin time for {agent_name}: {e}", file=sys.stderr)
     return released
 
 
@@ -511,8 +638,8 @@ async def _session_watchdog_loop():
                     if ws:
                         try:
                             await ws.send_json({"type": "cancel_task", "task_id": task_id})
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            print(f"[watchdog] WARNING: Failed to send cancel for {session_id}: {e}", file=sys.stderr)
 
                 # Mark session as timed_out
                 session["status"] = "timed_out"
@@ -639,8 +766,8 @@ async def _notify_brandon(message: str):
                 json={'user_id': '6265463172', 'message': message},
                 headers={'Authorization': f'Bearer {AGENT_API_TOKEN}'},
             )
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[relay] WARNING: _notify_brandon failed: {e}", file=sys.stderr)
 
 
 DUST_GAS_THRESHOLD = 0.003  # SOL needed to execute a sell tx
@@ -773,7 +900,7 @@ async def submit_task(task: TaskSubmit, authorization: str = Header()):
     if not verify_token(authorization):
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    task_id = str(uuid.uuid4())[:8]
+    task_id = str(uuid.uuid4())
     task_dict = {
         "task_id": task_id,
         "vessel_id": task.vessel_id,
@@ -787,7 +914,7 @@ async def submit_task(task: TaskSubmit, authorization: str = Header()):
         "completed_at": None,
     }
     tasks[task_id] = task_dict
-    
+
     # Save to persistent storage
     save_task(task_dict)
 
@@ -929,6 +1056,12 @@ async def relay_sell(req: SellRequest, request: Request, authorization: str = He
         relay_log('SELL_REJECTED', {'reason': 'no_agent_token', 'agent': req.agent_name})
         raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
 
+    # Rate limit check
+    _check_trade_rate_limit(req.agent_name, 'SELL')
+
+    # Per-agent authorization: requester can only sell from own wallet
+    _check_agent_authorization(requester, req.agent_name, 'SELL')
+
     # Spawn gate check — agent must have valid HMAC gate to execute trades
     await _gate_check_or_403(req.agent_name, 'SELL', requester)
 
@@ -1012,6 +1145,12 @@ async def relay_buy(req: BuyRequest, request: Request, authorization: str = Head
         relay_log('BUY_REJECTED', {'reason': 'no_agent_token', 'agent': req.agent_name})
         raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
 
+    # Rate limit check
+    _check_trade_rate_limit(req.agent_name, 'BUY')
+
+    # Per-agent authorization: requester can only buy from own wallet
+    _check_agent_authorization(requester, req.agent_name, 'BUY')
+
     # Spawn gate check — agent must have valid HMAC gate to execute trades
     await _gate_check_or_403(req.agent_name, 'BUY', requester)
 
@@ -1094,6 +1233,12 @@ async def relay_transfer(req: TransferRequest, request: Request, authorization: 
         relay_log('TRANSFER_REJECTED', {'reason': 'no_agent_token', 'from_agent': req.from_agent})
         raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
 
+    # Rate limit check
+    _check_trade_rate_limit(req.from_agent, 'TRANSFER')
+
+    # Per-agent authorization: requester can only transfer from own wallet
+    _check_agent_authorization(requester, req.from_agent, 'TRANSFER')
+
     # Spawn gate check — agent initiating transfer must have valid gate
     await _gate_check_or_403(req.from_agent, 'TRANSFER', requester)
 
@@ -1158,6 +1303,12 @@ async def relay_wallet_status(agent_name: str, request: Request, authorization: 
         relay_log('WALLET_STATUS_REJECTED', {'reason': 'invalid_agent', 'agent_name': agent_name[:50]})
         raise HTTPException(status_code=403, detail=f"Agent '{agent_name}' not in whitelist")
 
+    # Rate limit check
+    _check_read_rate_limit(requester or agent_name, 'WALLET_STATUS')
+
+    # Per-agent read isolation: agents can only query own wallet
+    _check_read_authorization(requester, agent_name, 'WALLET_STATUS')
+
     if not AGENT_API_TOKEN:
         raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
 
@@ -1194,6 +1345,12 @@ async def relay_transactions(agent_name: str, request: Request, authorization: s
     if agent_name not in AGENT_WHITELIST:
         relay_log('TRANSACTIONS_REJECTED', {'reason': 'invalid_agent', 'agent_name': agent_name[:50]})
         raise HTTPException(status_code=403, detail=f"Agent '{agent_name}' not in whitelist")
+
+    # Rate limit check
+    _check_read_rate_limit(requester or agent_name, 'TRANSACTIONS')
+
+    # Per-agent read isolation: agents can only query own transactions
+    _check_read_authorization(requester, agent_name, 'TRANSACTIONS')
 
     if not AGENT_API_TOKEN:
         raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
@@ -1234,6 +1391,12 @@ async def relay_positions(agent_name: str, request: Request, authorization: str 
     if agent_name not in AGENT_WHITELIST:
         relay_log('POSITIONS_REJECTED', {'reason': 'invalid_agent', 'agent_name': agent_name[:50]})
         raise HTTPException(status_code=403, detail=f"Agent '{agent_name}' not in whitelist")
+
+    # Rate limit check
+    _check_read_rate_limit(requester or agent_name, 'POSITIONS')
+
+    # Per-agent read isolation: agents can only query own positions
+    _check_read_authorization(requester, agent_name, 'POSITIONS')
 
     relay_log('POSITIONS', {'agent_name': agent_name, 'requester': requester or agent_name})
 
@@ -1467,8 +1630,8 @@ async def set_trade_manager(req: SetTradeManagerRequest, request: Request, autho
         try:
             with open(VESSEL_STATE_FILE) as f:
                 state = json.load(f)
-        except (json.JSONDecodeError, IOError):
-            pass
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"[server] WARNING: Failed to read vessel state: {e}", file=sys.stderr)
 
     old_manager = state.get('trade_manager')
     state['trade_manager'] = req.agent_name
@@ -1538,74 +1701,29 @@ async def get_agents_availability(authorization: str = Header()):
 @app.post("/agents/assign")
 async def assign_agent(req: AssignRequest, request: Request, authorization: str = Header()):
     """
-    Assign an agent to a position. Marks them as busy.
-    Validates: agent exists, is idle, and type is valid.
+    DEPRECATED — Use POST /agents/spawn instead.
+
+    /agents/spawn creates a session with automatic lifecycle management:
+    agents are marked busy on spawn and auto-released when the session
+    ends, times out, or is killed. This prevents agents from getting
+    stuck as "busy" when callers forget to release them.
     """
-    if not verify_token(authorization):
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-    requester = get_requester(request)
-
-    if req.agent_name not in AGENT_WHITELIST:
-        relay_log('ASSIGN_REJECTED', {'reason': 'invalid_agent', 'agent_name': req.agent_name[:50]})
-        raise HTTPException(status_code=403, detail=f"Agent '{req.agent_name}' not in whitelist")
-
-    if not SOLANA_ADDR_RE.match(req.token_mint) and req.agent_type == 'trader':
-        relay_log('ASSIGN_REJECTED', {'reason': 'invalid_mint', 'agent': req.agent_name})
-        raise HTTPException(status_code=400, detail="Invalid token mint address")
-
-    if req.agent_type not in ('trader', 'manager', 'content_manager'):
-        raise HTTPException(status_code=400, detail="agent_type must be 'trader', 'manager', or 'content_manager'")
-
-    state = _read_availability()
-    agents = state.get('agents', {})
-
-    if req.agent_name not in agents:
-        agents[req.agent_name] = {'status': 'idle', 'position': None, 'assigned_at': None, 'type': None, 'last_checkin': None}
-
-    agent = agents[req.agent_name]
-    if agent.get('status') == 'busy':
-        relay_log('ASSIGN_REJECTED', {
-            'reason': 'agent_busy',
-            'agent': req.agent_name,
-            'current_position': agent.get('position'),
-        })
-        return JSONResponse(status_code=409, content={
-            'success': False,
-            'error': f"Agent '{req.agent_name}' is busy",
-            'current_position': agent.get('position'),
-        })
-
-    now = datetime.utcnow().isoformat() + 'Z'
-    agent['status'] = 'busy'
-    agent['position'] = req.token_mint if req.agent_type == 'trader' else None
-    agent['assigned_at'] = now
-    agent['type'] = req.agent_type
-    if req.agent_type == 'manager':
-        agent['last_checkin'] = now
-
-    _write_availability(state)
-
-    relay_log('AGENT_ASSIGNED', {
+    relay_log('ASSIGN_DEPRECATED', {
         'agent': req.agent_name,
-        'type': req.agent_type,
-        'position': req.token_mint,
-        'requester': requester,
+        'requester': get_requester(request),
     })
-
-    return {
-        'success': True,
-        'agent_name': req.agent_name,
-        'status': 'busy',
-        'type': req.agent_type,
-        'position': req.token_mint,
-    }
+    return JSONResponse(status_code=410, content={
+        'success': False,
+        'error': 'DEPRECATED: /agents/assign is removed. Use POST /agents/spawn instead — it handles busy/idle lifecycle automatically.',
+    })
 
 
 @app.post("/agents/release")
 async def release_agent(req: ReleaseRequest, request: Request, authorization: str = Header()):
     """
     Release an agent from their assignment. Marks them as idle.
+    Emergency/manual override only — normal lifecycle is handled by
+    /agents/spawn sessions which auto-release on end/kill/timeout.
     Does NOT auto-transfer SOL — caller handles that separately.
     """
     if not verify_token(authorization):
@@ -1712,6 +1830,12 @@ async def relay_transfer_sol(req: TransferSolRequest, request: Request, authoriz
 
     if not AGENT_API_TOKEN:
         raise HTTPException(status_code=500, detail="AGENT_API_TOKEN not configured on relay")
+
+    # Rate limit check
+    _check_trade_rate_limit(req.from_agent, 'TRANSFER_SOL')
+
+    # Per-agent authorization: requester can only transfer SOL from own wallet
+    _check_agent_authorization(requester, req.from_agent, 'TRANSFER_SOL')
 
     # Spawn gate check — agent initiating SOL transfer must have valid gate
     await _gate_check_or_403(req.from_agent, 'TRANSFER_SOL', requester)
@@ -2071,17 +2195,23 @@ async def spawn_agent(req: SpawnRequest, request: Request, authorization: str = 
         except IOError as e:
             print(f"[spawn] Warning: could not read context for {req.agent_name}: {e}")
 
-    # Generate session ID
-    session_id = str(uuid.uuid4())[:8]
+    # Generate session ID (full UUID for 122-bit entropy)
+    session_id = str(uuid.uuid4())
 
     # Mark agent as busy
     agent_type_map = {
-        "scanner": "trader",
+        "scanner": "scanner",
         "trader": "trader",
         "manager": "manager",
-        "health": "manager",
+        "health": "health",
+        "health_monitor": "health",
         "content_manager": "content_manager",
-        "compliance_counsel": "manager",
+        "news_reporter": "content_manager",
+        "compliance_counsel": "compliance_counsel",
+        "compliance": "compliance_counsel",
+        "scout": "scout",
+        "vessel_scout": "scout",
+        "intelligence_scout": "scout",
         "general": "trader",
     }
     avail_type = agent_type_map.get(req.job_type, "trader")
@@ -2101,7 +2231,7 @@ async def spawn_agent(req: SpawnRequest, request: Request, authorization: str = 
     _write_availability(avail_state)
 
     # Create task for phone
-    task_id = str(uuid.uuid4())[:8]
+    task_id = str(uuid.uuid4())
     task_dict = {
         "task_id": task_id,
         "vessel_id": req.vessel_id,
@@ -2182,26 +2312,31 @@ async def get_agent_context(agent_name: str, authorization: str = Header()):
     if context_file.exists():
         try:
             result["identity"] = context_file.read_text()
-        except IOError:
-            pass
+        except IOError as e:
+            print(f"[server] WARNING: Failed to read context for {agent_name}: {e}", file=sys.stderr)
 
     if config_file.exists():
         try:
             result["config"] = json.loads(config_file.read_text())
-        except (IOError, json.JSONDecodeError):
-            pass
+        except (IOError, json.JSONDecodeError) as e:
+            print(f"[server] WARNING: Failed to read config for {agent_name}: {e}", file=sys.stderr)
 
     return result
 
 
 @app.get("/agents/sessions")
-async def list_agent_sessions(authorization: str = Header()):
-    """List all agent sessions (active and recent)."""
+async def list_agent_sessions(request: Request, authorization: str = Header()):
+    """List agent sessions. Non-MsWednesday agents only see own sessions."""
     if not verify_token(authorization):
         raise HTTPException(status_code=401, detail="Invalid token")
 
+    requester = get_requester(request)
+
     sessions = []
     for session_id, session in _agent_sessions.items():
+        # Per-agent session isolation: agents can only see own sessions
+        if requester and requester != 'MsWednesday' and session.get("agent_name") != requester:
+            continue
         sessions.append({
             "session_id": session_id,
             "agent_name": session.get("agent_name"),
@@ -2220,14 +2355,20 @@ async def list_agent_sessions(authorization: str = Header()):
 
 
 @app.get("/agents/sessions/{session_id}")
-async def get_agent_session(session_id: str, authorization: str = Header()):
+async def get_agent_session(session_id: str, request: Request, authorization: str = Header()):
     """Get detailed status for a specific agent session."""
     if not verify_token(authorization):
         raise HTTPException(status_code=401, detail="Invalid token")
 
+    requester = get_requester(request)
+
     session = _agent_sessions.get(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
+
+    # Per-agent session isolation
+    if requester and requester != 'MsWednesday' and session.get("agent_name") != requester:
+        raise HTTPException(status_code=403, detail="Cannot view another agent's session")
 
     # If session has a task_id, check for result
     task_id = session.get("task_id")
@@ -2260,6 +2401,16 @@ async def kill_agent_session(session_id: str, request: Request, authorization: s
     session = _agent_sessions.get(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
+
+    # Per-agent session isolation: agents can only kill own sessions
+    if requester and requester != 'MsWednesday' and session.get("agent_name") != requester:
+        relay_log("SESSION_KILL_DENIED", {
+            "session_id": session_id,
+            "requester": requester,
+            "target_agent": session.get("agent_name"),
+            "reason": "cross_agent_not_allowed",
+        })
+        raise HTTPException(status_code=403, detail="Cannot kill another agent's session")
 
     if session.get("status") != "running":
         return {
@@ -2324,7 +2475,8 @@ def _write_compliance_log(entries: list):
         with os.fdopen(fd, 'w') as f:
             json.dump(entries, f, indent=2)
         os.replace(tmp_path, str(COMPLIANCE_AUDIT_PATH))
-    except Exception:
+    except Exception as e:
+        print(f"[compliance] CRITICAL: Failed to write compliance log: {e}", file=sys.stderr)
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
         raise
@@ -2460,8 +2612,26 @@ def _parse_timestamp(ts: str) -> float:
 
 # --- WebSocket (for vessel to connect and receive tasks) ---
 
+MAX_WS_CONNECTIONS = 3  # Max concurrent WebSocket connections (only 1 phone expected)
+
 @app.websocket("/ws/{vessel_id}")
 async def vessel_socket(websocket: WebSocket, vessel_id: str):
+    # Reject duplicate vessel_id connections
+    if vessel_id in vessels:
+        await websocket.accept()
+        await websocket.send_json({"error": "vessel_id_already_connected"})
+        await websocket.close()
+        relay_log('WS_DUPLICATE_REJECTED', {'vessel_id': vessel_id})
+        return
+
+    # Enforce max concurrent connections
+    if len(vessels) >= MAX_WS_CONNECTIONS:
+        await websocket.accept()
+        await websocket.send_json({"error": "max_connections_reached", "limit": MAX_WS_CONNECTIONS})
+        await websocket.close()
+        relay_log('WS_CONNECTION_LIMIT', {'vessel_id': vessel_id, 'current': len(vessels), 'max': MAX_WS_CONNECTIONS})
+        return
+
     # Auth handshake
     await websocket.accept()
     try:

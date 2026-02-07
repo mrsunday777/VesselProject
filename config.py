@@ -12,7 +12,7 @@ TASK_TIMEOUT = 300
 AGENT_SESSION_TIMEOUT = 4 * 3600  # 4 hours max per agent session
 AGENT_MAX_TURNS = 20              # Max agentic loop turns per session
 
-# Load API key from secrets file (not tracked by git)
+# Load API key from secrets file (not tracked by git), fall back to environment variable
 ANTHROPIC_API_KEY = ""
 try:
     with open(os.path.join(os.path.dirname(__file__), "secrets.txt")) as f:
@@ -21,3 +21,5 @@ try:
                 ANTHROPIC_API_KEY = line.split("=", 1)[1].strip()
 except FileNotFoundError:
     pass
+if not ANTHROPIC_API_KEY:
+    ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")

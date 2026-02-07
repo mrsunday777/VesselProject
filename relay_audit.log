@@ -1,0 +1,227 @@
+{"timestamp": "2026-02-05T00:44:42.944177Z", "action": "NOTIFY_REQUESTED", "title": "Pipeline Live"}
+{"timestamp": "2026-02-05T00:44:42.975272Z", "action": "NOTIFY_RESULT", "status_code": 200}
+{"timestamp": "2026-02-05T00:47:12.518108Z", "action": "NOTIFY_REQUESTED", "title": "TP1 Hit \u2014 AGENT"}
+{"timestamp": "2026-02-05T00:47:12.543877Z", "action": "NOTIFY_RESULT", "status_code": 200}
+{"timestamp": "2026-02-05T00:57:45.071794Z", "action": "NOTIFY_REQUESTED", "title": "CP0 Feed Scan Complete"}
+{"timestamp": "2026-02-05T00:57:45.100052Z", "action": "NOTIFY_RESULT", "status_code": 200}
+{"timestamp": "2026-02-05T02:45:46.234147Z", "action": "WALLET_STATUS", "agent_name": "MsWednesday"}
+{"timestamp": "2026-02-05T02:45:50.043194Z", "action": "TRANSACTIONS", "agent_name": "MsWednesday", "limit": 3}
+{"timestamp": "2026-02-05T02:45:50.622945Z", "action": "POSITIONS", "agent_name": "MsWednesday"}
+{"timestamp": "2026-02-05T02:45:52.130859Z", "action": "BUY_REJECTED", "reason": "invalid_mint", "agent": "MsWednesday", "mint": "notvalid"}
+{"timestamp": "2026-02-05T02:55:38.674577Z", "action": "WALLET_STATUS", "agent_name": "MsWednesday", "requester": "msSunday"}
+{"timestamp": "2026-02-05T03:26:31.668840Z", "action": "TRANSFER_REJECTED", "reason": "invalid_mint", "from_agent": "MsWednesday", "mint": "invalidmint"}
+{"timestamp": "2026-02-05T03:44:22.970961Z", "action": "TRADE_MANAGER_CHANGED", "old_manager": "CP9", "new_manager": "CP0", "requester": "MsWednesday"}
+{"timestamp": "2026-02-05T03:44:22.973392Z", "action": "TRADE_MANAGER_CHANGED", "old_manager": "CP0", "new_manager": "CP9", "requester": null}
+{"timestamp": "2026-02-05T10:12:37.508950Z", "action": "AGENT_ASSIGNED", "agent": "CP0", "type": "trader", "position": "AM8Bp3goAanZsSuJjnWDsfPxoXqaj5JEoTpStv3zBAGS", "requester": null}
+{"timestamp": "2026-02-05T10:12:42.240291Z", "action": "ASSIGN_REJECTED", "reason": "invalid_mint", "agent": "CP0"}
+{"timestamp": "2026-02-05T10:12:48.484462Z", "action": "ASSIGN_REJECTED", "reason": "agent_busy", "agent": "CP0", "current_position": "AM8Bp3goAanZsSuJjnWDsfPxoXqaj5JEoTpStv3zBAGS"}
+{"timestamp": "2026-02-05T10:12:54.464588Z", "action": "AGENT_RELEASED", "agent": "CP0", "old_position": "AM8Bp3goAanZsSuJjnWDsfPxoXqaj5JEoTpStv3zBAGS", "old_type": "trader", "requester": null}
+{"timestamp": "2026-02-05T10:13:01.580414Z", "action": "AGENT_ASSIGNED", "agent": "msSunday", "type": "manager", "position": "monitoring", "requester": null}
+{"timestamp": "2026-02-05T10:13:01.612034Z", "action": "MANAGER_CHECKIN", "agent": "msSunday", "requester": null}
+{"timestamp": "2026-02-05T10:13:01.638449Z", "action": "AGENT_RELEASED", "agent": "msSunday", "old_position": null, "old_type": "manager", "requester": null}
+{"timestamp": "2026-02-05T17:44:13.276215Z", "action": "NOTIFY_REQUESTED", "title": "WATCHDOG: Killed cp0", "requester": null}
+{"timestamp": "2026-02-05T17:44:13.333558Z", "action": "NOTIFY_RESULT", "status_code": 200}
+{"timestamp": "2026-02-05T20:17:14.899985Z", "action": "TRANSFER_SOL_REQUESTED", "from_agent": "MsWednesday", "to_agent": "CP0", "amount_sol": 0.01, "requester": "MsWednesday"}
+{"timestamp": "2026-02-05T20:17:15.545947Z", "action": "TRANSFER_SOL_RESULT", "from_agent": "MsWednesday", "to_agent": "CP0", "status_code": 400, "signature": "none"}
+{"timestamp": "2026-02-05T20:17:15.549408Z", "action": "AGENT_ASSIGNED", "agent": "CP0", "type": "trader", "position": "AM8Bp3goAanZsSuJjnWDsfPxoXqaj5JEoTpStv3zBAGS", "requester": "MsWednesday"}
+{"timestamp": "2026-02-05T21:17:49.433637Z", "action": "AGENT_RELEASED", "agent": "CP9", "old_position": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump", "old_type": "trader", "requester": "MsWednesday"}
+{"timestamp": "2026-02-05T21:21:38.266447Z", "action": "AGENT_RELEASED", "agent": "CP0", "old_position": "AM8Bp3goAanZsSuJjnWDsfPxoXqaj5JEoTpStv3zBAGS", "old_type": "trader", "requester": "MsWednesday"}
+{"timestamp": "2026-02-05T21:41:05.566114Z", "action": "TRANSFER_SOL_GATE_DENIED", "agent_name": "CP0", "requester": "MsWednesday", "reason": "no_valid_spawn_gate"}
+{"timestamp": "2026-02-05T21:41:27.316161Z", "action": "TRANSFER_SOL_GATE_DENIED", "agent_name": "CP1", "requester": "MsWednesday", "reason": "no_valid_spawn_gate"}
+{"timestamp": "2026-02-05T21:45:12.962942Z", "action": "TRANSFER_SOL_GATE_DENIED", "agent_name": "CP1", "requester": "MsWednesday", "reason": "no_valid_spawn_gate"}
+{"timestamp": "2026-02-05T22:11:46.127860Z", "action": "TRANSFER_SOL_REQUESTED", "from_agent": "CP1", "to_agent": "MsWednesday", "amount_sol": null, "requester": "MsWednesday"}
+{"timestamp": "2026-02-05T22:11:46.327543Z", "action": "TRANSFER_SOL_RESULT", "from_agent": "CP1", "to_agent": "MsWednesday", "status_code": 400, "signature": "none"}
+{"timestamp": "2026-02-05T22:17:32.479213Z", "action": "TRANSFER_SOL_REQUESTED", "from_agent": "CP1", "to_agent": "MsWednesday", "amount_sol": null, "requester": "MsWednesday"}
+{"timestamp": "2026-02-05T22:17:32.809643Z", "action": "TRANSFER_SOL_RESULT", "from_agent": "CP1", "to_agent": "MsWednesday", "status_code": 400, "signature": "none"}
+{"timestamp": "2026-02-05T22:26:22.896486Z", "action": "TRANSFER_SOL_REQUESTED", "from_agent": "MsWednesday", "to_agent": "CP0", "amount_sol": 0.01, "requester": "MsWednesday"}
+{"timestamp": "2026-02-05T22:26:23.647355Z", "action": "TRANSFER_SOL_RESULT", "from_agent": "MsWednesday", "to_agent": "CP0", "status_code": 200, "signature": "2PTGdweK6DdwuVEs3dXqfeQQaNWbjvATX9hJH2rkfBPeC4eM4gbr6raPG5gYPCZWZVSz5w2ZQC9tnMEKifm7VkyB"}
+{"timestamp": "2026-02-05T22:26:23.651606Z", "action": "AGENT_ASSIGNED", "agent": "CP0", "type": "trader", "position": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump", "requester": "MsWednesday"}
+{"timestamp": "2026-02-05T22:33:21.096042Z", "action": "TRANSFER_SOL_REQUESTED", "from_agent": "CP0", "to_agent": "MsWednesday", "amount_sol": null, "requester": "MsWednesday"}
+{"timestamp": "2026-02-05T22:33:21.839509Z", "action": "TRANSFER_SOL_RESULT", "from_agent": "CP0", "to_agent": "MsWednesday", "status_code": 200, "signature": "3Y375K28F8q3bVXem9P5FhpjZREQsrPx6VSAmyRLj9QosFwL17ohqNHSddbF93JSgS5HJkFPos8pnPMBzBpFCtqA"}
+{"timestamp": "2026-02-05T22:33:21.844514Z", "action": "AGENT_RELEASED", "agent": "CP0", "old_position": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump", "old_type": "trader", "requester": "MsWednesday"}
+{"timestamp": "2026-02-05T23:17:17.606949Z", "action": "TRANSFER_SOL_REQUESTED", "from_agent": "CP0", "to_agent": "MsWednesday", "amount_sol": null, "requester": "MsWednesday"}
+{"timestamp": "2026-02-05T23:17:18.388016Z", "action": "TRANSFER_SOL_RESULT", "from_agent": "CP0", "to_agent": "MsWednesday", "status_code": 200, "signature": "4MVMJdwPLaSuV3czpoUAEC6pgmBbpAUmSuNzYx5CMwyx8MkeKiyMycufzTkMw4zAifFBN49XhAEhJUuGwH1yFCNB"}
+{"timestamp": "2026-02-05T23:17:20.341123Z", "action": "TRANSFER_SOL_REQUESTED", "from_agent": "CP1", "to_agent": "MsWednesday", "amount_sol": null, "requester": "MsWednesday"}
+{"timestamp": "2026-02-05T23:17:20.503561Z", "action": "TRANSFER_SOL_RESULT", "from_agent": "CP1", "to_agent": "MsWednesday", "status_code": 400, "signature": "none"}
+{"timestamp": "2026-02-05T23:22:22.339800Z", "action": "TRANSFER_SOL_REQUESTED", "from_agent": "MsWednesday", "to_agent": "CP0", "amount_sol": 0.01, "requester": "MsWednesday"}
+{"timestamp": "2026-02-05T23:22:23.138769Z", "action": "TRANSFER_SOL_RESULT", "from_agent": "MsWednesday", "to_agent": "CP0", "status_code": 200, "signature": "3YTe9L61un33cUkggxFJXQFZX5RJssr7aZTksd6KJAxDXqTrxB5UxkmbBuzJuibMbiZmPvDMJHw2aTRAJAuJ3gTE"}
+{"timestamp": "2026-02-05T23:22:23.142595Z", "action": "AGENT_ASSIGNED", "agent": "CP0", "type": "trader", "position": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T00:37:50.217355Z", "action": "TRANSFER_SOL_REQUESTED", "from_agent": "CP0", "to_agent": "MsWednesday", "amount_sol": null, "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T00:37:51.039104Z", "action": "TRANSFER_SOL_RESULT", "from_agent": "CP0", "to_agent": "MsWednesday", "status_code": 200, "signature": "4P2H9rHfnTDUBeBWJjMxDYDkv3MVKoM9w2XyuNup9DKG6ywc3ji4fXmUpgujp8N3irpVtXbz9gnvwqdQzNWTkwhp"}
+{"timestamp": "2026-02-06T00:47:50.485971Z", "action": "AGENT_RELEASED", "agent": "CP0", "old_position": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump", "old_type": "trader", "requester": null}
+{"timestamp": "2026-02-06T01:00:26.200845Z", "action": "TRANSFER_SOL_REQUESTED", "from_agent": "MsWednesday", "to_agent": "CP0", "amount_sol": 0.01, "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T01:00:26.764976Z", "action": "TRANSFER_SOL_RESULT", "from_agent": "MsWednesday", "to_agent": "CP0", "status_code": 200, "signature": "2VTmJrz2i7Tpf9TVrAmRdsbPPHu9aCoYVCJCbUYjrfZSyYPyoAUsvRQtiJxVvH6S6gGXMkyGyLRGfDxR1HcZfem5"}
+{"timestamp": "2026-02-06T01:00:26.772381Z", "action": "AGENT_ASSIGNED", "agent": "CP0", "type": "trader", "position": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T04:01:46.147457Z", "action": "AGENT_RELEASED", "agent": "CP0", "old_position": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump", "old_type": "trader", "requester": null}
+{"timestamp": "2026-02-06T04:01:50.123197Z", "action": "AGENT_RELEASED", "agent": "CP1", "old_position": null, "old_type": null, "requester": null}
+{"timestamp": "2026-02-06T04:02:47.714114Z", "action": "TRANSFER_SOL_REQUESTED", "from_agent": "MsWednesday", "to_agent": "CP0", "amount_sol": 0.01, "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T04:02:48.450903Z", "action": "TRANSFER_SOL_RESULT", "from_agent": "MsWednesday", "to_agent": "CP0", "status_code": 200, "signature": "5nrHgzqdUZLGszNJ4gYzdxAK6hTKWvujCn5GAeFo4PdYWwSG8GJuHYC7Fo2WWWpXv3dV7ts8EiX391h1NFRsi6yP"}
+{"timestamp": "2026-02-06T04:02:48.455580Z", "action": "AGENT_ASSIGNED", "agent": "CP0", "type": "trader", "position": "BsthswihbFBEwDhKfAWieSZ6UiJwGxtykyQPCmhpump", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T11:08:34.431882Z", "action": "SPAWN_GATE_DENIED", "agent_name": "CP0", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T12:08:36.317208Z", "action": "COMPLIANCE_DECISION", "audit_id": "COUNSEL-20260206-120836", "decision": "NOT_COMPLIANT", "question_preview": "Can Vessel Labs hold 0.5 SOL for gas in a company wallet?", "logged_by": "msCounsel"}
+{"timestamp": "2026-02-06T12:53:39.790416Z", "action": "ASSIGN_REJECTED", "reason": "agent_busy", "agent": "CP0", "current_position": "BsthswihbFBEwDhKfAWieSZ6UiJwGxtykyQPCmhpump"}
+{"timestamp": "2026-02-06T12:56:08.020893Z", "action": "AGENT_RELEASED", "agent": "CP0", "old_position": "BsthswihbFBEwDhKfAWieSZ6UiJwGxtykyQPCmhpump", "old_type": "trader", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T13:13:55.964067Z", "action": "SPAWN_DENIED", "agent_name": "test", "requester": null, "reason": "not_spawn_authority"}
+{"timestamp": "2026-02-06T13:22:19.304327Z", "action": "AGENT_SPAWNED", "session_id": "73a0c2ac", "agent_name": "msCounsel", "job_type": "compliance", "task_id": "1b2171cb", "mode": "oneshot", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T13:22:25.068289Z", "action": "AUTO_RELEASE_AGENT", "agent": "msCounsel", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-06T13:22:25.068536Z", "action": "SESSION_KILLED", "session_id": "73a0c2ac", "agent_name": "msCounsel", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T13:28:22.771583Z", "action": "AGENT_SPAWNED", "session_id": "08ba55d7", "agent_name": "msCounsel", "job_type": "compliance_counsel", "task_id": "97e3a3f1", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T13:28:32.674162Z", "action": "SESSION_ORPHANED", "session_id": "08ba55d7", "agent_name": "msCounsel", "reason": "vessel_disconnected"}
+{"timestamp": "2026-02-06T13:28:32.676797Z", "action": "AUTO_RELEASE_AGENT", "agent": "msCounsel", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-06T13:40:00.482815Z", "action": "AGENT_ASSIGNED", "agent": "CP0", "type": "trader", "position": "BsthswihbFBEwDhKfAWieSZ6UiJwGxtykyQPCmhpump", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T13:40:00.492705Z", "action": "ASSIGN_REJECTED", "reason": "invalid_mint", "agent": "CP1"}
+{"timestamp": "2026-02-06T13:40:00.501123Z", "action": "ASSIGN_REJECTED", "reason": "invalid_mint", "agent": "msSunday"}
+{"timestamp": "2026-02-06T13:40:00.510362Z", "action": "ASSIGN_REJECTED", "reason": "invalid_mint", "agent": "msCounsel"}
+{"timestamp": "2026-02-06T13:40:16.031918Z", "action": "AGENT_ASSIGNED", "agent": "CP1", "type": "trader", "position": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T13:40:16.050120Z", "action": "AGENT_ASSIGNED", "agent": "msSunday", "type": "trader", "position": "BsthswihbFBEwDhKfAWieSZ6UiJwGxtykyQPCmhpump", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T13:40:16.076735Z", "action": "AGENT_ASSIGNED", "agent": "msCounsel", "type": "trader", "position": "11111111111111111111111111111111", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T14:00:15.751971Z", "action": "AGENT_RELEASED", "agent": "CP0", "old_position": "BsthswihbFBEwDhKfAWieSZ6UiJwGxtykyQPCmhpump", "old_type": "trader", "requester": null}
+{"timestamp": "2026-02-06T14:00:15.759080Z", "action": "AGENT_RELEASED", "agent": "CP1", "old_position": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump", "old_type": "trader", "requester": null}
+{"timestamp": "2026-02-06T14:00:15.765271Z", "action": "AGENT_RELEASED", "agent": "msSunday", "old_position": "BsthswihbFBEwDhKfAWieSZ6UiJwGxtykyQPCmhpump", "old_type": "trader", "requester": null}
+{"timestamp": "2026-02-06T14:00:15.771628Z", "action": "AGENT_RELEASED", "agent": "msCounsel", "old_position": "11111111111111111111111111111111", "old_type": "trader", "requester": null}
+{"timestamp": "2026-02-06T14:06:05.723022Z", "action": "ASSIGN_DEPRECATED", "agent": "CP0", "requester": null}
+{"timestamp": "2026-02-06T14:09:55.356088Z", "action": "ASSIGN_DEPRECATED", "agent": "CP1", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T15:00:40.531017Z", "action": "AGENT_SPAWNED", "session_id": "19b1b7a8", "agent_name": "CP0", "job_type": "trader", "task_id": "b00ac943", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T15:01:51.555949Z", "action": "AGENT_SPAWNED", "session_id": "b4fd03f4", "agent_name": "msCounsel", "job_type": "compliance_counsel", "task_id": "9901c6e0", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T15:03:23.558892Z", "action": "AGENT_SPAWNED", "session_id": "25ede421", "agent_name": "CP9", "job_type": "scanner", "task_id": "e835b64a", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T15:05:12.970995Z", "action": "AGENT_SPAWNED", "session_id": "e7b74f14", "agent_name": "msSunday", "job_type": "content_manager", "task_id": "81160790", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T15:16:15.111784Z", "action": "AUTO_RELEASE_AGENT", "agent": "msSunday", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-06T15:16:15.112566Z", "action": "SESSION_KILLED", "session_id": "e7b74f14", "agent_name": "msSunday", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T15:16:15.200835Z", "action": "AGENT_SPAWNED", "session_id": "73518e6b", "agent_name": "msSunday", "job_type": "content_manager", "task_id": "2f895590", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T15:22:52.886083Z", "action": "AGENT_SPAWNED", "session_id": "4bcb4ffa", "agent_name": "CP1", "job_type": "news_reporter", "task_id": "52afe3a5", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T19:05:09.809155Z", "action": "SESSION_TIMEOUT", "session_id": "19b1b7a8", "agent_name": "CP0", "elapsed_hours": 4.1}
+{"timestamp": "2026-02-06T19:05:09.815479Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP0", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-06T19:05:09.860955Z", "action": "SESSION_TIMEOUT", "session_id": "b4fd03f4", "agent_name": "msCounsel", "elapsed_hours": 4.1}
+{"timestamp": "2026-02-06T19:05:09.861510Z", "action": "AUTO_RELEASE_AGENT", "agent": "msCounsel", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-06T19:05:09.867441Z", "action": "SESSION_TIMEOUT", "session_id": "25ede421", "agent_name": "CP9", "elapsed_hours": 4.0}
+{"timestamp": "2026-02-06T19:05:09.867825Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP9", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-06T19:20:09.877180Z", "action": "SESSION_TIMEOUT", "session_id": "73518e6b", "agent_name": "msSunday", "elapsed_hours": 4.1}
+{"timestamp": "2026-02-06T19:20:09.884250Z", "action": "AUTO_RELEASE_AGENT", "agent": "msSunday", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-06T19:25:09.901508Z", "action": "SESSION_TIMEOUT", "session_id": "4bcb4ffa", "agent_name": "CP1", "elapsed_hours": 4.0}
+{"timestamp": "2026-02-06T19:25:09.907437Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP1", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-06T19:52:14.543460Z", "action": "AGENT_SPAWNED", "session_id": "35a393d5", "agent_name": "msSunday", "job_type": "content_manager", "task_id": "571af027", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T23:05:45.299932Z", "action": "SPAWN_DENIED", "agent_name": "msSunday", "requester": null, "reason": "not_spawn_authority"}
+{"timestamp": "2026-02-06T23:06:02.035203Z", "action": "AGENT_RELEASED", "agent": "msSunday", "old_position": "BsthswihbFBEwDhKfAWieSZ6UiJwGxtykyQPCmhpump", "old_type": "content_manager", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T23:06:02.051687Z", "action": "AGENT_SPAWNED", "session_id": "c2398bc6", "agent_name": "msSunday", "job_type": "content_manager", "task_id": "91c33838", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T23:15:04.732702Z", "action": "AGENT_SPAWNED", "session_id": "333f5576", "agent_name": "msCounsel", "job_type": "compliance_counsel", "task_id": "39d80914", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T23:20:02.787763Z", "action": "AGENT_SPAWNED", "session_id": "bec73531", "agent_name": "CP0", "job_type": "trader", "task_id": "4cb3a48a", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T23:26:56.922859Z", "action": "AGENT_SPAWNED", "session_id": "b7bf8e84", "agent_name": "CP9", "job_type": "scanner", "task_id": "0a647113", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T23:31:26.115261Z", "action": "AGENT_RELEASED", "agent": "msCounsel", "old_position": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump", "old_type": "manager", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T23:31:26.132734Z", "action": "AGENT_SPAWNED", "session_id": "f3181f37", "agent_name": "msCounsel", "job_type": "compliance_counsel", "task_id": "c5da8189", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T23:33:40.838050Z", "action": "AGENT_RELEASED", "agent": "CP0", "old_position": "BsthswihbFBEwDhKfAWieSZ6UiJwGxtykyQPCmhpump", "old_type": "trader", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T23:33:40.853037Z", "action": "AGENT_SPAWNED", "session_id": "7437fc35", "agent_name": "CP0", "job_type": "scanner", "task_id": "2e9bc92c", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T23:35:03.181182Z", "action": "AGENT_RELEASED", "agent": "CP9", "old_position": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump", "old_type": "trader", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T23:35:03.194841Z", "action": "AGENT_SPAWNED", "session_id": "5834d1d6", "agent_name": "CP9", "job_type": "health_monitor", "task_id": "567e7c80", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T23:36:25.844085Z", "action": "AGENT_RELEASED", "agent": "msSunday", "old_position": "BsthswihbFBEwDhKfAWieSZ6UiJwGxtykyQPCmhpump", "old_type": "content_manager", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T23:36:25.859060Z", "action": "AGENT_SPAWNED", "session_id": "3e89f516", "agent_name": "msSunday", "job_type": "content_manager", "task_id": "b43ab6d9", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T23:37:41.334144Z", "action": "AGENT_SPAWNED", "session_id": "6fb0ffee", "agent_name": "CP1", "job_type": "scanner", "task_id": "9ec7706e", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T23:38:51.779366Z", "action": "SPAWN_GATE_DENIED", "agent_name": "vesselScout", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T23:39:01.144568Z", "action": "SPAWN_GATE_DENIED", "agent_name": "vesselScout", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T23:39:07.213518Z", "action": "SPAWN_GATE_DENIED", "agent_name": "vesselScout", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T23:39:36.929260Z", "action": "SPAWN_GATE_DENIED", "agent_name": "vesselScout", "requester": "MsWednesday"}
+{"timestamp": "2026-02-06T23:57:23.927954Z", "action": "AGENT_RELEASED", "agent": "msSunday", "old_position": "BsthswihbFBEwDhKfAWieSZ6UiJwGxtykyQPCmhpump", "old_type": "content_manager", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T00:02:04.623336Z", "action": "AGENT_SPAWNED", "session_id": "6bb04f6c", "agent_name": "msSunday", "job_type": "content_manager", "task_id": "73546e95", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T00:03:52.612946Z", "action": "AGENT_RELEASED", "agent": "CP0", "old_position": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump", "old_type": "trader", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T00:03:52.627819Z", "action": "AGENT_RELEASED", "agent": "CP1", "old_position": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump", "old_type": "trader", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T00:03:52.639716Z", "action": "AGENT_RELEASED", "agent": "CP9", "old_position": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump", "old_type": "trader", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T00:03:52.656674Z", "action": "AGENT_SPAWNED", "session_id": "e46c60a5", "agent_name": "CP0", "job_type": "trader", "task_id": "adf92515", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T00:03:52.670714Z", "action": "AGENT_SPAWNED", "session_id": "2a0acfbf", "agent_name": "CP1", "job_type": "scanner", "task_id": "61becbf2", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T00:03:52.683343Z", "action": "AGENT_SPAWNED", "session_id": "ef676d22", "agent_name": "CP9", "job_type": "health_monitor", "task_id": "85be0f74", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T00:14:58.359087Z", "action": "AGENT_RELEASED", "agent": "msCounsel", "old_position": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump", "old_type": "compliance_counsel", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T00:14:58.372905Z", "action": "AGENT_RELEASED", "agent": "CP0", "old_position": "BsthswihbFBEwDhKfAWieSZ6UiJwGxtykyQPCmhpump", "old_type": "trader", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T00:14:58.385167Z", "action": "AGENT_RELEASED", "agent": "CP1", "old_position": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump", "old_type": "scanner", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T00:14:58.403442Z", "action": "AGENT_RELEASED", "agent": "CP9", "old_position": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump", "old_type": "trader", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T00:14:58.418597Z", "action": "AGENT_RELEASED", "agent": "msSunday", "old_position": "BsthswihbFBEwDhKfAWieSZ6UiJwGxtykyQPCmhpump", "old_type": "content_manager", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T00:14:58.447627Z", "action": "AGENT_SPAWNED", "session_id": "2eb8e557", "agent_name": "msCounsel", "job_type": "compliance_counsel", "task_id": "c771a979", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T00:14:58.462598Z", "action": "AGENT_SPAWNED", "session_id": "057d3afb", "agent_name": "CP0", "job_type": "trader", "task_id": "03dac6a6", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T00:14:58.477567Z", "action": "AGENT_SPAWNED", "session_id": "1f0b16d0", "agent_name": "CP1", "job_type": "scanner", "task_id": "ece6a0fa", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T00:14:58.490607Z", "action": "AGENT_SPAWNED", "session_id": "ad7b44c8", "agent_name": "CP9", "job_type": "health_monitor", "task_id": "1c6956cb", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T00:14:58.505282Z", "action": "AGENT_SPAWNED", "session_id": "17760bee", "agent_name": "msSunday", "job_type": "content_manager", "task_id": "7427c3f6", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T00:16:55.735331Z", "action": "AGENT_SPAWNED", "session_id": "3efa0b60", "agent_name": "vesselScout", "job_type": "vessel_scout", "task_id": "15b1a857", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T00:44:11.588942Z", "action": "RELEASE_REJECTED", "reason": "invalid_agent", "agent_name": "vesselScout"}
+{"timestamp": "2026-02-07T00:44:11.613184Z", "action": "AGENT_SPAWNED", "session_id": "321e2bfe", "agent_name": "Chopper", "job_type": "vessel_scout", "task_id": "e0539985", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T01:19:41.917789Z", "action": "SELL_CROSS_AGENT_DENIED", "requester": "CP0", "target_agent": "CP1", "reason": "cross_agent_not_allowed"}
+{"timestamp": "2026-02-07T01:19:43.087587Z", "action": "WALLET_STATUS_CROSS_AGENT_READ_DENIED", "requester": "CP0", "target_agent": "CP1", "requester_job_type": null, "reason": "cross_agent_read_not_allowed"}
+{"timestamp": "2026-02-07T01:19:44.791462Z", "action": "WALLET_STATUS", "agent_name": "CP1", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T01:19:52.926408Z", "action": "SELL_REQUESTED", "agent_name": "CP0", "requester": "CP0", "token_mint": "So11111111111111111111111111111111111111112", "percent": 100.0, "slippage_bps": 75}
+{"timestamp": "2026-02-07T01:19:53.239583Z", "action": "SELL_RESULT", "agent_name": "CP0", "status_code": 400, "signature": "none"}
+{"timestamp": "2026-02-07T01:19:53.253802Z", "action": "SELL_REQUESTED", "agent_name": "CP0", "requester": "CP0", "token_mint": "So11111111111111111111111111111111111111112", "percent": 100.0, "slippage_bps": 75}
+{"timestamp": "2026-02-07T01:19:53.514370Z", "action": "SELL_RESULT", "agent_name": "CP0", "status_code": 400, "signature": "none"}
+{"timestamp": "2026-02-07T01:19:53.528441Z", "action": "SELL_REQUESTED", "agent_name": "CP0", "requester": "CP0", "token_mint": "So11111111111111111111111111111111111111112", "percent": 100.0, "slippage_bps": 75}
+{"timestamp": "2026-02-07T01:19:53.765083Z", "action": "SELL_RESULT", "agent_name": "CP0", "status_code": 400, "signature": "none"}
+{"timestamp": "2026-02-07T01:19:53.785883Z", "action": "SELL_REQUESTED", "agent_name": "CP0", "requester": "CP0", "token_mint": "So11111111111111111111111111111111111111112", "percent": 100.0, "slippage_bps": 75}
+{"timestamp": "2026-02-07T01:19:54.065244Z", "action": "SELL_RESULT", "agent_name": "CP0", "status_code": 400, "signature": "none"}
+{"timestamp": "2026-02-07T01:19:54.085858Z", "action": "SELL_REQUESTED", "agent_name": "CP0", "requester": "CP0", "token_mint": "So11111111111111111111111111111111111111112", "percent": 100.0, "slippage_bps": 75}
+{"timestamp": "2026-02-07T01:19:54.449177Z", "action": "SELL_RESULT", "agent_name": "CP0", "status_code": 400, "signature": "none"}
+{"timestamp": "2026-02-07T01:19:54.466248Z", "action": "SELL", "agent_name": "CP0", "count": 5, "max": 5, "window_seconds": 60}
+{"timestamp": "2026-02-07T01:20:06.034668Z", "action": "BUY_CROSS_AGENT_DENIED", "requester": "CP0", "target_agent": "CP1", "reason": "cross_agent_not_allowed"}
+{"timestamp": "2026-02-07T01:20:07.405475Z", "action": "TRANSFER_CROSS_AGENT_DENIED", "requester": "CP0", "target_agent": "CP1", "reason": "cross_agent_not_allowed"}
+{"timestamp": "2026-02-07T01:20:08.672426Z", "action": "TRANSFER_SOL_CROSS_AGENT_DENIED", "requester": "CP0", "target_agent": "CP1", "reason": "cross_agent_not_allowed"}
+{"timestamp": "2026-02-07T01:20:11.992859Z", "action": "TRANSACTIONS_CROSS_AGENT_READ_DENIED", "requester": "CP0", "target_agent": "CP1", "requester_job_type": null, "reason": "cross_agent_read_not_allowed"}
+{"timestamp": "2026-02-07T01:20:12.829018Z", "action": "POSITIONS_CROSS_AGENT_READ_DENIED", "requester": "CP0", "target_agent": "CP1", "requester_job_type": null, "reason": "cross_agent_read_not_allowed"}
+{"timestamp": "2026-02-07T01:20:14.429317Z", "action": "WALLET_STATUS", "agent_name": "CP0", "requester": "CP0"}
+{"timestamp": "2026-02-07T01:20:44.824718Z", "action": "BUY_REQUESTED", "agent_name": "CP1", "requester": "CP1", "token_mint": "So11111111111111111111111111111111111111112", "amount_sol": 0.001, "slippage_bps": 75}
+{"timestamp": "2026-02-07T01:20:45.434209Z", "action": "BUY_RESULT", "agent_name": "CP1", "status_code": 400, "signature": "none"}
+{"timestamp": "2026-02-07T01:20:45.448935Z", "action": "BUY_REQUESTED", "agent_name": "CP1", "requester": "CP1", "token_mint": "So11111111111111111111111111111111111111112", "amount_sol": 0.001, "slippage_bps": 75}
+{"timestamp": "2026-02-07T01:20:46.036595Z", "action": "BUY_RESULT", "agent_name": "CP1", "status_code": 400, "signature": "none"}
+{"timestamp": "2026-02-07T01:20:46.057119Z", "action": "BUY", "agent_name": "CP1", "count": 5, "max": 5, "window_seconds": 60}
+{"timestamp": "2026-02-07T01:20:46.069824Z", "action": "BUY", "agent_name": "CP1", "count": 5, "max": 5, "window_seconds": 60}
+{"timestamp": "2026-02-07T01:20:46.079571Z", "action": "BUY", "agent_name": "CP1", "count": 5, "max": 5, "window_seconds": 60}
+{"timestamp": "2026-02-07T01:20:46.088364Z", "action": "BUY", "agent_name": "CP1", "count": 5, "max": 5, "window_seconds": 60}
+{"timestamp": "2026-02-07T01:21:10.509111Z", "action": "BUY_REQUESTED", "agent_name": "msSunday", "requester": "msSunday", "token_mint": "So11111111111111111111111111111111111111112", "amount_sol": 0.001, "slippage_bps": 75}
+{"timestamp": "2026-02-07T01:21:11.080614Z", "action": "BUY_RESULT", "agent_name": "msSunday", "status_code": 400, "signature": "none"}
+{"timestamp": "2026-02-07T01:21:11.090937Z", "action": "BUY_REQUESTED", "agent_name": "msSunday", "requester": "msSunday", "token_mint": "So11111111111111111111111111111111111111112", "amount_sol": 0.001, "slippage_bps": 75}
+{"timestamp": "2026-02-07T01:21:11.592536Z", "action": "BUY_RESULT", "agent_name": "msSunday", "status_code": 400, "signature": "none"}
+{"timestamp": "2026-02-07T01:21:11.605709Z", "action": "BUY_REQUESTED", "agent_name": "msSunday", "requester": "msSunday", "token_mint": "So11111111111111111111111111111111111111112", "amount_sol": 0.001, "slippage_bps": 75}
+{"timestamp": "2026-02-07T01:21:12.212607Z", "action": "BUY_RESULT", "agent_name": "msSunday", "status_code": 400, "signature": "none"}
+{"timestamp": "2026-02-07T01:21:12.227631Z", "action": "BUY_REQUESTED", "agent_name": "msSunday", "requester": "msSunday", "token_mint": "So11111111111111111111111111111111111111112", "amount_sol": 0.001, "slippage_bps": 75}
+{"timestamp": "2026-02-07T01:21:12.852409Z", "action": "BUY_RESULT", "agent_name": "msSunday", "status_code": 400, "signature": "none"}
+{"timestamp": "2026-02-07T01:21:12.864270Z", "action": "BUY_REQUESTED", "agent_name": "msSunday", "requester": "msSunday", "token_mint": "So11111111111111111111111111111111111111112", "amount_sol": 0.001, "slippage_bps": 75}
+{"timestamp": "2026-02-07T01:21:13.543591Z", "action": "BUY_RESULT", "agent_name": "msSunday", "status_code": 400, "signature": "none"}
+{"timestamp": "2026-02-07T01:21:13.552360Z", "action": "BUY", "agent_name": "msSunday", "count": 5, "max": 5, "window_seconds": 60}
+{"timestamp": "2026-02-07T01:21:52.266120Z", "action": "BUY_REQUESTED", "agent_name": "CP9", "requester": "CP9", "token_mint": "So11111111111111111111111111111111111111112", "amount_sol": 0.001, "slippage_bps": 75}
+{"timestamp": "2026-02-07T01:21:52.883821Z", "action": "BUY_RESULT", "agent_name": "CP9", "status_code": 400, "signature": "none"}
+{"timestamp": "2026-02-07T01:21:52.897979Z", "action": "BUY_REQUESTED", "agent_name": "CP9", "requester": "CP9", "token_mint": "So11111111111111111111111111111111111111112", "amount_sol": 0.001, "slippage_bps": 75}
+{"timestamp": "2026-02-07T01:21:53.529038Z", "action": "BUY_RESULT", "agent_name": "CP9", "status_code": 400, "signature": "none"}
+{"timestamp": "2026-02-07T01:21:53.545224Z", "action": "BUY_REQUESTED", "agent_name": "CP9", "requester": "CP9", "token_mint": "So11111111111111111111111111111111111111112", "amount_sol": 0.001, "slippage_bps": 75}
+{"timestamp": "2026-02-07T01:21:54.121406Z", "action": "BUY_RESULT", "agent_name": "CP9", "status_code": 400, "signature": "none"}
+{"timestamp": "2026-02-07T01:21:54.145298Z", "action": "BUY_REQUESTED", "agent_name": "CP9", "requester": "CP9", "token_mint": "So11111111111111111111111111111111111111112", "amount_sol": 0.001, "slippage_bps": 75}
+{"timestamp": "2026-02-07T01:21:54.741511Z", "action": "BUY_RESULT", "agent_name": "CP9", "status_code": 400, "signature": "none"}
+{"timestamp": "2026-02-07T01:21:54.753591Z", "action": "BUY_REQUESTED", "agent_name": "CP9", "requester": "CP9", "token_mint": "So11111111111111111111111111111111111111112", "amount_sol": 0.001, "slippage_bps": 75}
+{"timestamp": "2026-02-07T01:21:55.293711Z", "action": "BUY_RESULT", "agent_name": "CP9", "status_code": 400, "signature": "none"}
+{"timestamp": "2026-02-07T01:21:55.302650Z", "action": "RATE_LIMITED", "agent_name": "CP9", "blocked_action": "BUY", "count": 5, "max": 5, "window_seconds": 60}
+{"timestamp": "2026-02-07T01:22:14.624178Z", "action": "SELL_CROSS_AGENT_DENIED", "requester": "CP0", "target_agent": "CP1", "reason": "cross_agent_not_allowed"}
+{"timestamp": "2026-02-07T01:22:14.631078Z", "action": "BUY_CROSS_AGENT_DENIED", "requester": "CP0", "target_agent": "CP1", "reason": "cross_agent_not_allowed"}
+{"timestamp": "2026-02-07T01:22:14.638147Z", "action": "TRANSFER_CROSS_AGENT_DENIED", "requester": "CP0", "target_agent": "CP1", "reason": "cross_agent_not_allowed"}
+{"timestamp": "2026-02-07T01:22:14.645300Z", "action": "TRANSFER_SOL_CROSS_AGENT_DENIED", "requester": "CP0", "target_agent": "CP1", "reason": "cross_agent_not_allowed"}
+{"timestamp": "2026-02-07T01:22:14.651744Z", "action": "WALLET_STATUS_CROSS_AGENT_READ_DENIED", "requester": "CP0", "target_agent": "CP1", "requester_job_type": null, "reason": "cross_agent_read_not_allowed"}
+{"timestamp": "2026-02-07T01:22:14.658329Z", "action": "TRANSACTIONS_CROSS_AGENT_READ_DENIED", "requester": "CP0", "target_agent": "CP1", "requester_job_type": null, "reason": "cross_agent_read_not_allowed"}
+{"timestamp": "2026-02-07T01:22:14.665657Z", "action": "POSITIONS_CROSS_AGENT_READ_DENIED", "requester": "CP0", "target_agent": "CP1", "requester_job_type": null, "reason": "cross_agent_read_not_allowed"}
+{"timestamp": "2026-02-07T01:22:14.672226Z", "action": "WALLET_STATUS", "agent_name": "CP0", "requester": "CP0"}
+{"timestamp": "2026-02-07T01:22:15.418185Z", "action": "WALLET_STATUS", "agent_name": "CP1", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T01:49:02.584173Z", "action": "AGENT_RELEASED", "agent": "CP0", "old_position": "BsthswihbFBEwDhKfAWieSZ6UiJwGxtykyQPCmhpump", "old_type": "trader", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T01:49:02.608515Z", "action": "AGENT_RELEASED", "agent": "CP1", "old_position": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump", "old_type": "scanner", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T01:49:02.627664Z", "action": "AGENT_RELEASED", "agent": "CP9", "old_position": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump", "old_type": "health", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T01:49:02.645785Z", "action": "AGENT_RELEASED", "agent": "msSunday", "old_position": "BsthswihbFBEwDhKfAWieSZ6UiJwGxtykyQPCmhpump", "old_type": "content_manager", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T01:49:02.663152Z", "action": "AGENT_RELEASED", "agent": "msCounsel", "old_position": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump", "old_type": "compliance_counsel", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T01:49:02.681971Z", "action": "AGENT_RELEASED", "agent": "Chopper", "old_position": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump", "old_type": "scout", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T05:09:21.719030Z", "action": "AGENT_SPAWNED", "session_id": "e18d975f-a9e2-47da-b39b-b69e5088886e", "agent_name": "msCounsel", "job_type": "compliance_counsel", "task_id": "f58ca316-91ad-4c23-b697-b638e64071f4", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T05:40:11.275423Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T05:48:20.463943Z", "action": "AGENT_SPAWNED", "session_id": "bfbf6e14-72f5-44d9-a597-b723c79212f6", "agent_name": "CP0", "job_type": "trader", "task_id": "9ecb4623-0146-4bda-ba9b-dc6848941f07", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T05:52:01.165273Z", "action": "AGENT_SPAWNED", "session_id": "8df937fc-8745-4146-8aeb-378f1428aea0", "agent_name": "CP1", "job_type": "scanner", "task_id": "f78ebf15-c0fa-4544-8f31-d9ee3d309a95", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T05:54:07.959442Z", "action": "AGENT_SPAWNED", "session_id": "610f847a-54d6-402f-9c60-6203f9d1f548", "agent_name": "msSunday", "job_type": "content_manager", "task_id": "3c300bdc-f6b6-44c4-8baf-81110679eaeb", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T05:55:22.541791Z", "action": "AGENT_SPAWNED", "session_id": "55ff61c4-1bde-4cd5-8570-faae6d424261", "agent_name": "CP9", "job_type": "health_monitor", "task_id": "4775eaa7-dcfa-43ba-a83b-744b790005bd", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T05:56:19.494752Z", "action": "AGENT_SPAWNED", "session_id": "ce3d7216-6434-4765-b134-d458f257f145", "agent_name": "Chopper", "job_type": "vessel_scout", "task_id": "ddcac79d-b71d-4cfd-b903-b4860f68c507", "mode": "oneshot", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T06:00:18.649962Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP1", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T06:00:18.650876Z", "action": "SESSION_KILLED", "session_id": "8df937fc-8745-4146-8aeb-378f1428aea0", "agent_name": "CP1", "requester": null}
+{"timestamp": "2026-02-07T06:00:24.166546Z", "action": "AGENT_SPAWNED", "session_id": "23e318ae-db4c-4662-9603-cbfbc15db21a", "agent_name": "CP1", "job_type": "scanner", "task_id": "08fc1c56-8e1b-4908-9ffa-535b5fdd1ae8", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T06:47:18.203483Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T06:49:20.784822Z", "action": "AGENT_RELEASED", "agent": "CP0", "old_position": "BsthswihbFBEwDhKfAWieSZ6UiJwGxtykyQPCmhpump", "old_type": "trader", "requester": null}
+{"timestamp": "2026-02-07T06:49:20.794352Z", "action": "AGENT_RELEASED", "agent": "CP1", "old_position": "scanning", "old_type": "scanner", "requester": null}
+{"timestamp": "2026-02-07T06:49:20.802165Z", "action": "AGENT_RELEASED", "agent": "CP9", "old_position": "monitoring", "old_type": "health", "requester": null}
+{"timestamp": "2026-02-07T06:49:20.810732Z", "action": "AGENT_RELEASED", "agent": "msSunday", "old_position": "operations", "old_type": "content_manager", "requester": null}
+{"timestamp": "2026-02-07T06:49:20.818997Z", "action": "AGENT_RELEASED", "agent": "msCounsel", "old_position": "compliance_work", "old_type": "compliance_counsel", "requester": null}
+{"timestamp": "2026-02-07T06:49:20.827053Z", "action": "AGENT_RELEASED", "agent": "Chopper", "old_position": "scouting", "old_type": "scout", "requester": null}
+{"timestamp": "2026-02-07T06:49:35.694848Z", "action": "AGENT_SPAWNED", "session_id": "2222daf8-ecdc-477a-b8d6-070d16ca0e81", "agent_name": "Chopper", "job_type": "scout", "task_id": "46f2ece2-172a-4313-9422-819f7f64a1d7", "mode": "oneshot", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T06:49:36.129234Z", "action": "AUTO_RELEASE_AGENT", "agent": "Chopper", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T06:49:36.129712Z", "action": "SESSION_COMPLETED", "session_id": "2222daf8-ecdc-477a-b8d6-070d16ca0e81", "agent_name": "Chopper", "status": "error", "turns": null}

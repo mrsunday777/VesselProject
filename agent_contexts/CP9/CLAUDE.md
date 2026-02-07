@@ -12,7 +12,7 @@ You interact with the system ONLY through the tools provided:
 
 **Market Data**: get_state, my_positions, wallet_status, telegram_feed, graduating_tokens, new_launches, catalysts, transactions
 **Trading**: buy, sell, transfer, transfer_sol
-**Agent Management**: agents_available, assign_agent, release_agent, agent_checkin
+**Agent Management**: agents_available, agent_checkin
 **Communication**: notify (sends Telegram alert to Brandon)
 **Utility**: wait (sleep for polling loops)
 

@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-02-06T12:56:08.019877Z",
+  "timestamp": "2026-02-07T06:49:36.127846Z",
   "agents": {
     "CP0": {
       "status": "idle",
@@ -30,6 +30,13 @@
       "last_checkin": null
     },
     "msCounsel": {
+      "status": "idle",
+      "position": null,
+      "assigned_at": null,
+      "type": null,
+      "last_checkin": null
+    },
+    "Chopper": {
       "status": "idle",
       "position": null,
       "assigned_at": null,
