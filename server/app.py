@@ -6,6 +6,7 @@ Wednesday submits tasks via REST, vessel picks them up via WebSocket.
 
 import asyncio
 import json
+import tempfile
 import uuid
 import time
 import hashlib
@@ -283,6 +284,11 @@ AGENT_WHITELIST = {"MsWednesday", "CP0", "CP1", "CP9", "msSunday", "msCounsel", 
 
 # Agent context docs (Mac-side source of truth for agent identity)
 AGENT_CONTEXTS_DIR = Path(PROJECT_ROOT) / 'agent_contexts'
+
+# Local spawn (MCP proxy) — Claude Code CLI path and MCP server
+CLAUDE_CLI_PATH = Path.home() / '.local' / 'bin' / 'claude'
+MCP_SERVER_PATH = Path(PROJECT_ROOT) / 'vessel' / 'vessel_mcp_server.py'
+MCP_PYTHON_PATH = Path(PROJECT_ROOT) / 'venv' / 'bin' / 'python3'
 
 # Active agent sessions (relay-side tracking)
 # session_id -> {agent_name, job_type, task_id, started_at, status, ...}
@@ -631,8 +637,15 @@ async def _session_watchdog_loop():
                     "elapsed_hours": round((now - session["started_at"]) / 3600, 1),
                 })
 
-                # Send cancel to phone
-                if task_id:
+                # Kill local process or send cancel to phone
+                if session.get("mode") == "local":
+                    process = session.get("process")
+                    if process and process.returncode is None:
+                        try:
+                            process.kill()
+                        except Exception as e:
+                            print(f"[watchdog] WARNING: Failed to kill local process for {session_id}: {e}", file=sys.stderr)
+                elif task_id:
                     vessel_id = session.get("vessel_id", "phone-01")
                     ws = vessels.get(vessel_id)
                     if ws:
@@ -656,9 +669,12 @@ async def _session_watchdog_loop():
                 )
 
             # Check for orphaned sessions (phone disconnected while agents running)
+            # Local sessions don't need a vessel connection — skip them
             for session_id, session in list(_agent_sessions.items()):
                 if session.get("status") != "running":
                     continue
+                if session.get("mode") == "local":
+                    continue  # Local sessions manage their own lifecycle
                 vessel_id = session.get("vessel_id", "phone-01")
                 if vessel_id not in vessels:
                     agent_name = session.get("agent_name", "unknown")
@@ -2112,23 +2128,22 @@ class SpawnRequest(BaseModel):
     prompt: str
     token_mint: Optional[str] = None
     max_turns: int = AGENT_MAX_TURNS
-    mode: str = "oneshot"       # "oneshot" or "continuous"
+    mode: str = "oneshot"       # "oneshot", "continuous", or "local" (Mac-side Claude Code)
     vessel_id: str = "phone-01"
+    max_budget_usd: float = 1.0  # Budget cap for local mode (per spawn)
 
 
 @app.post("/agents/spawn")
 async def spawn_agent(req: SpawnRequest, request: Request, authorization: str = Header()):
     """
-    Spawn an agent on the phone vessel via relay.
-    Only MsWednesday can spawn agents.
+    Spawn an agent via phone vessel or locally via Claude Code CLI (MCP proxy).
 
-    Flow:
-    1. Validate agent_name in whitelist, requester is MsWednesday
-    2. Gate check (verify spawn gate exists and is valid)
-    3. Load agent context (CLAUDE.md) from Mac-side storage
-    4. Mark agent as busy
-    5. Create task and queue for phone
-    6. Return session_id for tracking
+    Modes:
+    - "oneshot" / "continuous": Dispatch to phone vessel (existing behavior)
+    - "local": Run Claude Code CLI on Mac with vessel_tools via MCP
+      (uses Claude subscription instead of API credits)
+
+    Only MsWednesday can spawn agents.
     """
     if not verify_token(authorization):
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -2179,6 +2194,11 @@ async def spawn_agent(req: SpawnRequest, request: Request, authorization: str = 
             detail=f"Agent '{req.agent_name}' is already busy"
         )
 
+    # --- Mode: Local (Claude Code CLI on Mac) ---
+    if req.mode == "local":
+        return await _spawn_local(req, requester, avail_state, agents)
+
+    # --- Mode: Vessel (phone dispatch) ---
     # Check vessel is connected
     if req.vessel_id not in vessels:
         raise HTTPException(
@@ -2199,36 +2219,7 @@ async def spawn_agent(req: SpawnRequest, request: Request, authorization: str = 
     session_id = str(uuid.uuid4())
 
     # Mark agent as busy
-    agent_type_map = {
-        "scanner": "scanner",
-        "trader": "trader",
-        "manager": "manager",
-        "health": "health",
-        "health_monitor": "health",
-        "content_manager": "content_manager",
-        "news_reporter": "content_manager",
-        "compliance_counsel": "compliance_counsel",
-        "compliance": "compliance_counsel",
-        "scout": "scout",
-        "vessel_scout": "scout",
-        "intelligence_scout": "scout",
-        "general": "trader",
-    }
-    avail_type = agent_type_map.get(req.job_type, "trader")
-    now_str = datetime.utcnow().isoformat() + "Z"
-
-    if req.agent_name not in agents:
-        agents[req.agent_name] = {
-            "status": "idle", "position": None,
-            "assigned_at": None, "type": None, "last_checkin": None,
-        }
-    agents[req.agent_name]["status"] = "busy"
-    agents[req.agent_name]["position"] = req.token_mint
-    agents[req.agent_name]["assigned_at"] = now_str
-    agents[req.agent_name]["type"] = avail_type
-    if avail_type == "manager":
-        agents[req.agent_name]["last_checkin"] = now_str
-    _write_availability(avail_state)
+    _mark_agent_busy(req, agents, avail_state)
 
     # Create task for phone
     task_id = str(uuid.uuid4())
@@ -2290,6 +2281,301 @@ async def spawn_agent(req: SpawnRequest, request: Request, authorization: str = 
         "task_id": task_id,
         "status": "dispatched",
     }
+
+
+def _mark_agent_busy(req: SpawnRequest, agents: dict, avail_state: dict):
+    """Mark an agent as busy in the availability state."""
+    agent_type_map = {
+        "scanner": "scanner",
+        "trader": "trader",
+        "manager": "manager",
+        "health": "health",
+        "health_monitor": "health",
+        "content_manager": "content_manager",
+        "news_reporter": "content_manager",
+        "compliance_counsel": "compliance_counsel",
+        "compliance": "compliance_counsel",
+        "scout": "scout",
+        "vessel_scout": "scout",
+        "intelligence_scout": "scout",
+        "general": "trader",
+    }
+    avail_type = agent_type_map.get(req.job_type, "trader")
+    now_str = datetime.utcnow().isoformat() + "Z"
+
+    if req.agent_name not in agents:
+        agents[req.agent_name] = {
+            "status": "idle", "position": None,
+            "assigned_at": None, "type": None, "last_checkin": None,
+        }
+    agents[req.agent_name]["status"] = "busy"
+    agents[req.agent_name]["position"] = req.token_mint
+    agents[req.agent_name]["assigned_at"] = now_str
+    agents[req.agent_name]["type"] = avail_type
+    if avail_type == "manager":
+        agents[req.agent_name]["last_checkin"] = now_str
+    _write_availability(avail_state)
+
+
+async def _spawn_local(req: SpawnRequest, requester: str, avail_state: dict, agents: dict):
+    """
+    Spawn an agent locally via Claude Code CLI with MCP vessel_tools.
+    Uses Claude subscription instead of API credits.
+
+    Security:
+    - --tools "" disables ALL built-in tools (no filesystem access)
+    - --strict-mcp-config ensures only vessel_tools MCP server is loaded
+    - --dangerously-skip-permissions is safe because only vessel_tools are available
+    """
+    # Verify Claude CLI exists
+    if not CLAUDE_CLI_PATH.exists():
+        raise HTTPException(
+            status_code=503,
+            detail=f"Claude CLI not found at {CLAUDE_CLI_PATH}"
+        )
+
+    # Load agent context (CLAUDE.md) from Mac-side storage
+    identity = ""
+    context_file = AGENT_CONTEXTS_DIR / req.agent_name / "CLAUDE.md"
+    if context_file.exists():
+        try:
+            identity = context_file.read_text()
+        except IOError as e:
+            print(f"[spawn-local] Warning: could not read context for {req.agent_name}: {e}")
+
+    # Generate session ID
+    session_id = str(uuid.uuid4())
+
+    # Write temp MCP config with agent-specific env vars
+    mcp_config = {
+        "mcpServers": {
+            "vessel-tools": {
+                "command": str(MCP_PYTHON_PATH),
+                "args": [str(MCP_SERVER_PATH)],
+                "env": {
+                    "AGENT_NAME": req.agent_name,
+                    "JOB_TYPE": req.job_type,
+                    "RELAY_URL": f"http://localhost:{SERVER_PORT}",
+                    "VESSEL_SECRET": VESSEL_SECRET,
+                },
+            }
+        }
+    }
+
+    mcp_config_path = None
+    try:
+        # Write temp config file
+        fd, mcp_config_path = tempfile.mkstemp(
+            prefix=f"vessel_mcp_{req.agent_name}_",
+            suffix=".json",
+        )
+        with os.fdopen(fd, "w") as f:
+            json.dump(mcp_config, f)
+
+        # Build system prompt
+        system_prompt = _build_local_system_prompt(req.agent_name, req.job_type, identity)
+
+        # Mark agent as busy
+        _mark_agent_busy(req, agents, avail_state)
+
+        # Track session (before spawn so it's visible immediately)
+        _agent_sessions[session_id] = {
+            "agent_name": req.agent_name,
+            "job_type": req.job_type,
+            "task_id": None,  # No phone task for local mode
+            "vessel_id": "local",
+            "mode": "local",
+            "started_at": time.time(),
+            "status": "running",
+            "prompt_preview": req.prompt[:200],
+            "completed_at": None,
+            "result": None,
+            "process": None,  # Will be set by background task
+            "mcp_config_path": mcp_config_path,
+        }
+
+        relay_log("AGENT_SPAWNED_LOCAL", {
+            "session_id": session_id,
+            "agent_name": req.agent_name,
+            "job_type": req.job_type,
+            "mode": "local",
+            "requester": requester,
+            "max_budget_usd": req.max_budget_usd,
+        })
+
+        # Spawn Claude CLI as background task
+        asyncio.create_task(
+            _run_local_agent(session_id, req, system_prompt, mcp_config_path)
+        )
+
+        return {
+            "success": True,
+            "session_id": session_id,
+            "agent_name": req.agent_name,
+            "job_type": req.job_type,
+            "task_id": None,
+            "status": "spawned_local",
+            "mode": "local",
+        }
+
+    except Exception as e:
+        # Clean up on error
+        if mcp_config_path and os.path.exists(mcp_config_path):
+            os.unlink(mcp_config_path)
+        relay_log("SPAWN_LOCAL_ERROR", {
+            "agent_name": req.agent_name,
+            "error": str(e),
+        })
+        raise HTTPException(status_code=500, detail=f"Local spawn failed: {str(e)}")
+
+
+def _build_local_system_prompt(agent_name: str, job_type: str, identity: str) -> str:
+    """Build the system prompt for a locally-spawned agent."""
+    parts = []
+
+    # Agent identity
+    if identity:
+        parts.append(f"<agent-identity>\n{identity}\n</agent-identity>")
+
+    # Constraints
+    parts.append(f"""<agent-constraints>
+You are {agent_name}, a vessel agent in the SXAN trading system.
+Your job_type is: {job_type}
+
+CRITICAL RULES:
+- You can ONLY use the vessel-tools MCP tools. You have NO other capabilities.
+- You cannot read files, write files, or run shell commands.
+- You cannot access the internet except through your vessel tools.
+- Complete your task using ONLY the tools available to you.
+- When done, output a final summary of what you accomplished.
+- Be concise and efficient. Do not waste tool calls.
+</agent-constraints>""")
+
+    return "\n\n".join(parts)
+
+
+async def _run_local_agent(session_id: str, req: SpawnRequest, system_prompt: str, mcp_config_path: str):
+    """
+    Background task: run Claude CLI for a local agent spawn.
+    Parses output, updates session, and cleans up.
+    """
+    agent_name = req.agent_name
+    process = None
+
+    try:
+        # Build claude CLI command
+        cmd = [
+            str(CLAUDE_CLI_PATH),
+            "--print",
+            "--tools", "",
+            "--mcp-config", mcp_config_path,
+            "--strict-mcp-config",
+            "--system-prompt", system_prompt,
+            "--model", "haiku",
+            "--output-format", "json",
+            "--no-session-persistence",
+            "--dangerously-skip-permissions",
+            "--max-budget-usd", str(req.max_budget_usd),
+            req.prompt,
+        ]
+
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+
+        # Store process reference for kill support
+        if session_id in _agent_sessions:
+            _agent_sessions[session_id]["process"] = process
+
+        # Wait for completion with timeout
+        try:
+            stdout, stderr = await asyncio.wait_for(
+                process.communicate(),
+                timeout=AGENT_SESSION_TIMEOUT,
+            )
+        except asyncio.TimeoutError:
+            process.kill()
+            await process.wait()
+            if session_id in _agent_sessions:
+                _agent_sessions[session_id]["status"] = "timed_out"
+                _agent_sessions[session_id]["completed_at"] = time.time()
+            await _auto_release_agent(agent_name)
+            relay_log("LOCAL_AGENT_TIMEOUT", {
+                "session_id": session_id,
+                "agent_name": agent_name,
+            })
+            return
+
+        stdout_text = stdout.decode("utf-8", errors="replace") if stdout else ""
+        stderr_text = stderr.decode("utf-8", errors="replace") if stderr else ""
+
+        # Parse JSON output
+        result = None
+        try:
+            result = json.loads(stdout_text)
+        except (json.JSONDecodeError, ValueError):
+            result = {"raw_output": stdout_text[:5000]}
+
+        # Determine status
+        exit_code = process.returncode
+        status = "completed" if exit_code == 0 else "error"
+
+        if stderr_text and exit_code != 0:
+            if result is None:
+                result = {}
+            if isinstance(result, dict):
+                result["stderr"] = stderr_text[:2000]
+
+        # Update session
+        if session_id in _agent_sessions:
+            session = _agent_sessions[session_id]
+            session["status"] = status
+            session["completed_at"] = time.time()
+            session["result"] = result
+            session["exit_code"] = exit_code
+
+            # Extract cost if available
+            if isinstance(result, dict):
+                cost = result.get("cost_usd") or result.get("total_cost_usd")
+                if cost:
+                    session["cost_usd"] = cost
+
+        relay_log("LOCAL_AGENT_COMPLETED", {
+            "session_id": session_id,
+            "agent_name": agent_name,
+            "status": status,
+            "exit_code": exit_code,
+            "cost_usd": session.get("cost_usd") if session_id in _agent_sessions else None,
+        })
+
+    except Exception as e:
+        print(f"[spawn-local] ERROR running {agent_name}: {e}", file=sys.stderr)
+        if session_id in _agent_sessions:
+            _agent_sessions[session_id]["status"] = "error"
+            _agent_sessions[session_id]["completed_at"] = time.time()
+            _agent_sessions[session_id]["result"] = {"error": str(e)}
+        relay_log("LOCAL_AGENT_ERROR", {
+            "session_id": session_id,
+            "agent_name": agent_name,
+            "error": str(e),
+        })
+    finally:
+        # Auto-release agent
+        await _auto_release_agent(agent_name)
+
+        # Clean up temp MCP config
+        try:
+            if mcp_config_path and os.path.exists(mcp_config_path):
+                os.unlink(mcp_config_path)
+        except OSError:
+            pass
+
+        # Clear process reference
+        if session_id in _agent_sessions:
+            _agent_sessions[session_id].pop("process", None)
+            _agent_sessions[session_id].pop("mcp_config_path", None)
 
 
 @app.get("/agents/context/{agent_name}")
@@ -2422,16 +2708,32 @@ async def kill_agent_session(session_id: str, request: Request, authorization: s
     vessel_id = session.get("vessel_id", "phone-01")
     agent_name = session.get("agent_name", "unknown")
 
-    # Send cancel to phone
-    ws = vessels.get(vessel_id)
-    if ws and task_id:
-        try:
-            await ws.send_json({"type": "cancel_task", "task_id": task_id})
-        except Exception as e:
-            relay_log("SESSION_KILL_SEND_ERROR", {
-                "session_id": session_id,
-                "error": str(e),
-            })
+    # Kill local process or send cancel to phone
+    if session.get("mode") == "local":
+        process = session.get("process")
+        if process and process.returncode is None:
+            try:
+                process.terminate()
+                # Give it 5s to clean up, then force kill
+                try:
+                    await asyncio.wait_for(process.wait(), timeout=5)
+                except asyncio.TimeoutError:
+                    process.kill()
+            except Exception as e:
+                relay_log("SESSION_KILL_PROCESS_ERROR", {
+                    "session_id": session_id,
+                    "error": str(e),
+                })
+    else:
+        ws = vessels.get(vessel_id)
+        if ws and task_id:
+            try:
+                await ws.send_json({"type": "cancel_task", "task_id": task_id})
+            except Exception as e:
+                relay_log("SESSION_KILL_SEND_ERROR", {
+                    "session_id": session_id,
+                    "error": str(e),
+                })
 
     # Mark session as killed
     session["status"] = "killed"

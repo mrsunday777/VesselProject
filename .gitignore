@@ -4,3 +4,4 @@ __pycache__/
 .vessel_env
 vessel_workspace/
 secrets.txt
+venv/

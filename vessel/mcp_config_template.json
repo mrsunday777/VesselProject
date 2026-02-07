@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "vessel-tools": {
+      "command": "/Users/brandonceballos/Desktop/VesselProject/venv/bin/python3",
+      "args": ["/Users/brandonceballos/Desktop/VesselProject/vessel/vessel_mcp_server.py"],
+      "env": {
+        "AGENT_NAME": "__AGENT_NAME__",
+        "JOB_TYPE": "__JOB_TYPE__",
+        "RELAY_URL": "http://localhost:8777",
+        "VESSEL_SECRET": "mrsunday"
+      }
+    }
+  }
+}
