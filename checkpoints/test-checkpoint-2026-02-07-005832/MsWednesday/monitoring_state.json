@@ -1,0 +1,587 @@
+{
+  "token": "CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump",
+  "position": {
+    "entry_sol": 0.1565,
+    "entry_usd": 109,
+    "entry_tx_1": "5aWAHbUqV8UmZdK8K787o35rnzWCscevF2yVHKUDUefKccEc2XbpAcmcK8PDLYEGn2ZrJMgor1WYHic3HEFzkS1u",
+    "entry_tx_2": "59z69NwZpWDLpANpegCNukK8yNR1TZpya7PTbXQ4G6KsvHFiZHf2UsBSTN1C45qLmRDHSPLZZ3ni4qzfQb8TEuHH"
+  },
+  "targets": {
+    "tp_usd": 163.5,
+    "tp_pct": 50,
+    "sl_usd": null,
+    "sl_pct": null
+  },
+  "status": "TP_EXECUTED",
+  "spawned_at": "2026-02-04T11:23:38Z",
+  "timeout_24h": "2026-02-05T11:23:38Z",
+  "monitoring_logs": [
+    {
+      "timestamp": "2026-02-04T19:23:57.938Z",
+      "message": "🚀 MONITORING STARTED - Token: CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump"
+    },
+    {
+      "timestamp": "2026-02-04T19:23:57.944Z",
+      "message": "⏱️  Polling interval: 30s | TP Target: $163.5 USD | Timeout: 24h"
+    },
+    {
+      "timestamp": "2026-02-04T19:24:27.949Z",
+      "message": "\n--- POLL #1 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:24:27.953Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:24:28.118Z",
+      "message": "✅ Price: $0.00008193 USD | ₩ 8.773e-7 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:24:28.119Z",
+      "message": "📈 Entry: $109 | Current: $0.000082 | P&L: -100.00%"
+    },
+    {
+      "timestamp": "2026-02-04T19:24:57.951Z",
+      "message": "\n--- POLL #2 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:24:57.964Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:24:58.159Z",
+      "message": "✅ Price: $0.00008193 USD | ₩ 8.773e-7 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:24:58.162Z",
+      "message": "📈 Entry: $109 | Current: $0.000082 | P&L: -100.00%"
+    },
+    {
+      "timestamp": "2026-02-04T19:25:27.741Z",
+      "message": "🚀 MONITORING STARTED - Token: CcYZTCuuU48CePcL1dHX7sqHr7TgDmuYJfk3rPiipump"
+    },
+    {
+      "timestamp": "2026-02-04T19:25:27.743Z",
+      "message": "⏱️  Polling interval: 30s | TP Target: $163.5 USD | Timeout: 24h"
+    },
+    {
+      "timestamp": "2026-02-04T19:25:57.746Z",
+      "message": "\n--- POLL #1 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:25:57.749Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:25:57.946Z",
+      "message": "✅ Price: $0.0000857400 USD | 0.0000009155 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:25:57.947Z",
+      "message": "📌 Entry token price baseline set: $0.0000857400 USD"
+    },
+    {
+      "timestamp": "2026-02-04T19:25:57.949Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0000857400 | Value: $109.00 | P&L: 0.00% ($0.00)"
+    },
+    {
+      "timestamp": "2026-02-04T19:26:27.747Z",
+      "message": "\n--- POLL #2 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:26:27.751Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:26:27.854Z",
+      "message": "✅ Price: $0.0000936500 USD | 0.0000009996 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:26:27.855Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0000936500 | Value: $119.06 | P&L: 9.23% ($10.06)"
+    },
+    {
+      "timestamp": "2026-02-04T19:26:57.749Z",
+      "message": "\n--- POLL #3 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:26:57.752Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:26:57.851Z",
+      "message": "✅ Price: $0.0000957700 USD | 0.0000010240 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:26:57.853Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0000957700 | Value: $121.75 | P&L: 11.70% ($12.75)"
+    },
+    {
+      "timestamp": "2026-02-04T19:27:27.751Z",
+      "message": "\n--- POLL #4 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:27:27.754Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:27:27.854Z",
+      "message": "✅ Price: $0.0000949400 USD | 0.0000010150 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:27:27.855Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0000949400 | Value: $120.70 | P&L: 10.73% ($11.70)"
+    },
+    {
+      "timestamp": "2026-02-04T19:27:57.756Z",
+      "message": "\n--- POLL #5 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:27:57.760Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:27:57.922Z",
+      "message": "✅ Price: $0.0000939600 USD | 0.0000010050 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:27:57.924Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0000939600 | Value: $119.45 | P&L: 9.59% ($10.45)"
+    },
+    {
+      "timestamp": "2026-02-04T19:28:27.759Z",
+      "message": "\n--- POLL #6 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:28:27.762Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:28:27.881Z",
+      "message": "✅ Price: $0.0000955500 USD | 0.0000010230 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:28:27.883Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0000955500 | Value: $121.47 | P&L: 11.44% ($12.47)"
+    },
+    {
+      "timestamp": "2026-02-04T19:28:57.761Z",
+      "message": "\n--- POLL #7 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:28:57.767Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:28:57.985Z",
+      "message": "✅ Price: $0.0000955500 USD | 0.0000010230 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:28:57.986Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0000955500 | Value: $121.47 | P&L: 11.44% ($12.47)"
+    },
+    {
+      "timestamp": "2026-02-04T19:29:27.762Z",
+      "message": "\n--- POLL #8 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:29:27.766Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:29:27.846Z",
+      "message": "✅ Price: $0.0000962000 USD | 0.0000010300 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:29:27.849Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0000962000 | Value: $122.30 | P&L: 12.20% ($13.30)"
+    },
+    {
+      "timestamp": "2026-02-04T19:29:57.763Z",
+      "message": "\n--- POLL #9 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:29:57.766Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:29:57.983Z",
+      "message": "✅ Price: $0.0000962000 USD | 0.0000010300 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:29:57.985Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0000962000 | Value: $122.30 | P&L: 12.20% ($13.30)"
+    },
+    {
+      "timestamp": "2026-02-04T19:30:27.765Z",
+      "message": "\n--- POLL #10 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:30:27.770Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:30:27.949Z",
+      "message": "✅ Price: $0.0000962000 USD | 0.0000010300 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:30:27.951Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0000962000 | Value: $122.30 | P&L: 12.20% ($13.30)"
+    },
+    {
+      "timestamp": "2026-02-04T19:30:57.767Z",
+      "message": "\n--- POLL #11 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:30:57.770Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:30:57.864Z",
+      "message": "✅ Price: $0.0000947900 USD | 0.0000010150 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:30:57.866Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0000947900 | Value: $120.51 | P&L: 10.56% ($11.51)"
+    },
+    {
+      "timestamp": "2026-02-04T19:31:27.768Z",
+      "message": "\n--- POLL #12 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:31:27.771Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:31:27.868Z",
+      "message": "✅ Price: $0.0001012000 USD | 0.0000010840 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:31:27.869Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0001012000 | Value: $128.65 | P&L: 18.03% ($19.65)"
+    },
+    {
+      "timestamp": "2026-02-04T19:31:57.769Z",
+      "message": "\n--- POLL #13 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:31:57.773Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:31:57.865Z",
+      "message": "✅ Price: $0.0001012000 USD | 0.0000010840 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:31:57.867Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0001012000 | Value: $128.65 | P&L: 18.03% ($19.65)"
+    },
+    {
+      "timestamp": "2026-02-04T19:32:27.770Z",
+      "message": "\n--- POLL #14 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:32:27.774Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:32:27.936Z",
+      "message": "✅ Price: $0.0001082000 USD | 0.0000011570 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:32:27.939Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0001082000 | Value: $137.55 | P&L: 26.20% ($28.55)"
+    },
+    {
+      "timestamp": "2026-02-04T19:32:57.772Z",
+      "message": "\n--- POLL #15 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:32:57.782Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:32:57.894Z",
+      "message": "✅ Price: $0.0001124000 USD | 0.0000012020 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:32:57.896Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0001124000 | Value: $142.89 | P&L: 31.09% ($33.89)"
+    },
+    {
+      "timestamp": "2026-02-04T19:33:27.773Z",
+      "message": "\n--- POLL #16 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:33:27.778Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:33:27.888Z",
+      "message": "✅ Price: $0.0001090000 USD | 0.0000011670 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:33:27.890Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0001090000 | Value: $138.57 | P&L: 27.13% ($29.57)"
+    },
+    {
+      "timestamp": "2026-02-04T19:33:57.774Z",
+      "message": "\n--- POLL #17 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:33:57.778Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:33:57.912Z",
+      "message": "✅ Price: $0.0001047000 USD | 0.0000011200 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:33:57.916Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0001047000 | Value: $133.10 | P&L: 22.11% ($24.10)"
+    },
+    {
+      "timestamp": "2026-02-04T19:34:27.776Z",
+      "message": "\n--- POLL #18 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:34:27.780Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:34:27.875Z",
+      "message": "✅ Price: $0.0001061000 USD | 0.0000011340 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:34:27.876Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0001061000 | Value: $134.88 | P&L: 23.75% ($25.88)"
+    },
+    {
+      "timestamp": "2026-02-04T19:34:57.779Z",
+      "message": "\n--- POLL #19 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:34:57.782Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:34:57.958Z",
+      "message": "✅ Price: $0.0001061000 USD | 0.0000011340 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:34:57.961Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0001061000 | Value: $134.88 | P&L: 23.75% ($25.88)"
+    },
+    {
+      "timestamp": "2026-02-04T19:35:27.780Z",
+      "message": "\n--- POLL #20 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:35:27.785Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:35:27.882Z",
+      "message": "✅ Price: $0.0001113000 USD | 0.0000011880 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:35:27.885Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0001113000 | Value: $141.49 | P&L: 29.81% ($32.49)"
+    },
+    {
+      "timestamp": "2026-02-04T19:35:57.782Z",
+      "message": "\n--- POLL #21 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:35:57.785Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:35:57.902Z",
+      "message": "✅ Price: $0.0001153000 USD | 0.0000012290 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:35:57.905Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0001153000 | Value: $146.58 | P&L: 34.48% ($37.58)"
+    },
+    {
+      "timestamp": "2026-02-04T19:36:27.783Z",
+      "message": "\n--- POLL #22 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:36:27.787Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:36:27.897Z",
+      "message": "✅ Price: $0.0001117000 USD | 0.0000011880 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:36:27.899Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0001117000 | Value: $142.00 | P&L: 30.28% ($33.00)"
+    },
+    {
+      "timestamp": "2026-02-04T19:36:57.783Z",
+      "message": "\n--- POLL #23 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:36:57.785Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:36:57.934Z",
+      "message": "✅ Price: $0.0001155000 USD | 0.0000012300 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:36:57.936Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0001155000 | Value: $146.83 | P&L: 34.71% ($37.83)"
+    },
+    {
+      "timestamp": "2026-02-04T19:37:27.784Z",
+      "message": "\n--- POLL #24 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:37:27.788Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:37:27.895Z",
+      "message": "✅ Price: $0.0001110000 USD | 0.0000011810 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:37:27.898Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0001110000 | Value: $141.11 | P&L: 29.46% ($32.11)"
+    },
+    {
+      "timestamp": "2026-02-04T19:37:57.785Z",
+      "message": "\n--- POLL #25 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:37:57.788Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:37:57.905Z",
+      "message": "✅ Price: $0.0001133000 USD | 0.0000012080 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:37:57.906Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0001133000 | Value: $144.04 | P&L: 32.14% ($35.04)"
+    },
+    {
+      "timestamp": "2026-02-04T19:38:27.787Z",
+      "message": "\n--- POLL #26 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:38:27.793Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:38:27.883Z",
+      "message": "✅ Price: $0.0001082000 USD | 0.0000011540 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:38:27.886Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0001082000 | Value: $137.55 | P&L: 26.20% ($28.55)"
+    },
+    {
+      "timestamp": "2026-02-04T19:38:57.789Z",
+      "message": "\n--- POLL #27 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:38:57.794Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:38:57.999Z",
+      "message": "✅ Price: $0.0001046000 USD | 0.0000011140 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:38:58.001Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0001046000 | Value: $132.98 | P&L: 22.00% ($23.98)"
+    },
+    {
+      "timestamp": "2026-02-04T19:39:27.792Z",
+      "message": "\n--- POLL #28 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:39:27.796Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:39:27.967Z",
+      "message": "✅ Price: $0.0001046000 USD | 0.0000011140 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:39:27.970Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0001046000 | Value: $132.98 | P&L: 22.00% ($23.98)"
+    },
+    {
+      "timestamp": "2026-02-04T19:39:57.793Z",
+      "message": "\n--- POLL #29 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:39:57.796Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:39:57.895Z",
+      "message": "✅ Price: $0.0001094000 USD | 0.0000011660 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:39:57.898Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0001094000 | Value: $139.08 | P&L: 27.60% ($30.08)"
+    },
+    {
+      "timestamp": "2026-02-04T19:40:27.794Z",
+      "message": "\n--- POLL #30 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:40:27.798Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:40:27.899Z",
+      "message": "✅ Price: $0.0001284000 USD | 0.0000013720 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:40:27.903Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0001284000 | Value: $163.23 | P&L: 49.76% ($54.23)"
+    },
+    {
+      "timestamp": "2026-02-04T19:40:57.796Z",
+      "message": "\n--- POLL #31 ---"
+    },
+    {
+      "timestamp": "2026-02-04T19:40:57.799Z",
+      "message": "📊 Polling price..."
+    },
+    {
+      "timestamp": "2026-02-04T19:40:57.894Z",
+      "message": "✅ Price: $0.0002135000 USD | 0.0000022800 SOL"
+    },
+    {
+      "timestamp": "2026-02-04T19:40:57.895Z",
+      "message": "📈 Entry: $0.0000857400 | Current: $0.0002135000 | Value: $271.42 | P&L: 149.01% ($162.42)"
+    },
+    {
+      "timestamp": "2026-02-04T19:40:57.896Z",
+      "message": "🎯 TP TRIGGER HIT! Position value $271.42 >= Target $163.5"
+    },
+    {
+      "timestamp": "2026-02-04T19:40:57.897Z",
+      "message": "🎉 TAKE PROFIT EXECUTED!"
+    },
+    {
+      "timestamp": "2026-02-04T19:40:57.900Z",
+      "message": "📤 NOTIFY: TP executed at $0.0002135000 | Position Value: $271.42 | P&L: 149.01% (+$162.42)"
+    }
+  ],
+  "exit": {
+    "timestamp": "2026-02-04T19:40:57.899Z",
+    "price_usd": 0.0002135,
+    "value_usd": 271.41940751108,
+    "pnl_pct": 149.0086307441101,
+    "pnl_usd": 162.41940751108
+  }
+}

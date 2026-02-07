@@ -1,0 +1,30 @@
+{
+  "repos": {
+    "MsWednesday": {
+      "path": "/Users/brandonceballos/Desktop/MsWednesday",
+      "state_files": [
+        "trading/wallet_state.json",
+        "trading/entry_overrides.json",
+        "gateway_config.json",
+        "cp0_config.json",
+        "monitor_state.json",
+        "monitoring_state.json",
+        "vessel_framework/agent_assignments.json",
+        "HEARTBEAT.md",
+        "spawn_gate.py",
+        "sxan_wallet.py"
+      ]
+    },
+    "VesselProject": {
+      "path": "/Users/brandonceballos/Desktop/VesselProject",
+      "state_files": [
+        "vessel_state.json",
+        "agent_availability.json",
+        "config.py",
+        "compliance_audit.json"
+      ]
+    }
+  },
+  "relay_url": "http://localhost:8777",
+  "relay_secret": "mrsunday"
+}
