@@ -660,7 +660,7 @@ def render_agent_status_panel(agent_avail, activity, rows, cols, agent_sessions=
         ('Transfers',  'transfers',  Term.MAGENTA),
         ('Content',    'content',    Term.WHITE),
         ('Compliance', 'compliance', Term.BRIGHT_RED),
-        ('Scout',      'scout',      Term.BRIGHT_MAGENTA),
+        ('Scout',      'scout',      Term.MAGENTA),
         ('Sessions',   'sessions',   Term.GREEN),
     ]
 
@@ -1063,7 +1063,7 @@ def run_display(server_ip, refresh):
     agent_avail = None
     agent_sessions = None
     last_fetch = 0
-    fetch_interval = max(3.0, refresh)  # Don't hammer the server
+    fetch_interval = max(1.0, refresh)  # Fetch data every 1s minimum
     frame = 0
     fetch_errors = 0
 

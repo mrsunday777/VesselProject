@@ -1,0 +1,15 @@
+[
+  {
+    "audit_id": "COUNSEL-20260206-120836",
+    "timestamp": "2026-02-06T12:08:36.316515Z",
+    "question": "Can Vessel Labs hold 0.5 SOL for gas in a company wallet?",
+    "decision": "NOT_COMPLIANT",
+    "reasoning": "Holding SOL in a Vessel Labs wallet violates Compliance Foundation Section WE WILL NEVER: Custody. Even temporary holding constitutes custody under FinCEN MSB guidance.",
+    "jurisdiction": "US",
+    "reference": "VESSEL_LABS_COMPLIANCE_FOUNDATION.md Section Custody",
+    "human_review_required": false,
+    "requested_by": "MsWednesday",
+    "next_action": "Send gas SOL directly from agent wallets instead.",
+    "logged_by": "msCounsel"
+  }
+]

@@ -1,0 +1,59 @@
+{
+  "spawnAuthority": {
+    "allowedSpawner": "mswednesday",
+    "enforcedBy": "spawn_gate.py",
+    "signatureMethod": "HMAC-SHA256"
+  },
+  "allowedAgents": [
+    {
+      "id": "cp0",
+      "name": "CP0",
+      "role": "ui-design",
+      "workspace": "~/Desktop/cp0",
+      "status": "registered"
+    },
+    {
+      "id": "cp1",
+      "name": "CP1",
+      "role": "frontend-debug",
+      "workspace": "~/Desktop/cp1",
+      "status": "registered"
+    },
+    {
+      "id": "cp9",
+      "name": "CP9",
+      "role": "backend-audit",
+      "workspace": "~/Desktop/CP9",
+      "status": "registered"
+    },
+    {
+      "id": "mssunday",
+      "name": "MsSunday",
+      "role": "cp-manager",
+      "workspace": "~/Desktop/MsSunday",
+      "status": "registered"
+    },
+    {
+      "id": "vessel-phone-01",
+      "name": "Vessel Phone",
+      "role": "remote-executor",
+      "workspace": "~/Desktop/VesselProject",
+      "type": "vessel",
+      "transport": {
+        "protocol": "websocket",
+        "relay": "http://192.168.1.146:8777",
+        "vesselId": "phone-01",
+        "auth": "VESSEL_SECRET"
+      },
+      "capabilities": ["shell", "python", "agent"],
+      "status": "active"
+    }
+  ],
+  "rules": {
+    "maxConcurrentAgents": 5,
+    "requireSpawnGate": true,
+    "gateExpiryHours": 24,
+    "unauthorizedAction": "deny_and_notify",
+    "notifyTarget": "brandon"
+  }
+}

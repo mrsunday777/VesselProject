@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-02-07T11:25:15.669771Z",
+  "timestamp": "2026-02-07T09:14:17.972069Z",
   "agents": {
     "CP0": {
       "status": "idle",
@@ -33,14 +33,14 @@
       "status": "idle",
       "position": null,
       "assigned_at": null,
-      "type": "compliance_counsel",
+      "type": null,
       "last_checkin": null
     },
     "Chopper": {
       "status": "idle",
       "position": null,
       "assigned_at": null,
-      "type": "scout",
+      "type": null,
       "last_checkin": null
     }
   }

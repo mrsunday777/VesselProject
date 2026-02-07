@@ -1,0 +1,81 @@
+{
+  "timestamp": "2026-02-07T03:41:25.419661",
+  "agents": [
+    "MsWednesday",
+    "CP0",
+    "CP1",
+    "CP9",
+    "msSunday"
+  ],
+  "sol_balance": 0.03543623,
+  "sol_price_usd": 84.76,
+  "sol_value_usd": 3.0035748548,
+  "total_value_usd": 3.056218312111038,
+  "realized_sol": -0.41595526699999996,
+  "positions": [
+    {
+      "mint": "AM8Bp3goAanZsSuJjnWDsfPxoXqaj5JEoTpStv3zBAGS",
+      "symbol": "NANOBOT",
+      "name": "Nanobot ",
+      "amount": 284.098528392,
+      "price_usd": 0.0001853,
+      "value_usd": 0.0526434573110376,
+      "mcap": 185320.0,
+      "volume_24h": 305131.09,
+      "liquidity": 30322.87,
+      "price_change_5m": -3.08,
+      "price_change_1h": 0.98,
+      "price_change_24h": 108.0,
+      "cost_basis_sol": -0.002049511,
+      "cost_basis_usd": -0.17371655236,
+      "pnl_usd": 0,
+      "pnl_pct": 0,
+      "tp_target": 50.0,
+      "sl_target": -30.0,
+      "distance_to_tp": 50.0,
+      "distance_to_sl": 30.0,
+      "buys": 0,
+      "sells": 8,
+      "agent": "CP1",
+      "wallet": "CP1"
+    }
+  ],
+  "alerts": [],
+  "agent_summaries": [
+    {
+      "agent": "MsWednesday",
+      "pubkey": "J5G2Z5yTgprEiwKEr3NLpKLghAVksez8twitJJwfiYsh",
+      "sol_balance": 0.030443729,
+      "position_value_usd": 0,
+      "enabled": true
+    },
+    {
+      "agent": "CP0",
+      "pubkey": "DXus5yRAgYY4PHWy2UapmF3keXFddPhSMbkPFkkfDWTs",
+      "sol_balance": 0.004992501,
+      "position_value_usd": 0,
+      "enabled": true
+    },
+    {
+      "agent": "CP1",
+      "pubkey": "759xFNbfd3XwtDompTJdtff337P8QEYrnP62n6sAr4c2",
+      "sol_balance": 0.0,
+      "position_value_usd": 0.0526434573110376,
+      "enabled": true
+    },
+    {
+      "agent": "CP9",
+      "pubkey": "2fLreRB6ijLUYFr4RXnXNpCNPDVEJbUCdenhsoT2uwBm",
+      "sol_balance": 0.0,
+      "position_value_usd": 0,
+      "enabled": true
+    },
+    {
+      "agent": "msSunday",
+      "pubkey": "7SDtuejgwy2hnVGECipREzms4FkudjD7QVcyxLC1gi3y",
+      "sol_balance": 0.0,
+      "position_value_usd": 0,
+      "enabled": true
+    }
+  ]
+}

@@ -247,3 +247,394 @@
 {"timestamp": "2026-02-07T09:17:10.031628Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
 {"timestamp": "2026-02-07T09:17:15.205199Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
 {"timestamp": "2026-02-07T09:17:20.280087Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:17:25.361292Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:17:30.432810Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:17:35.521523Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:17:40.571643Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:17:45.651689Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:17:50.724900Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:17:55.759988Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:18:00.981569Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:18:06.079057Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:18:11.126839Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:18:16.182944Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:18:21.283802Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:18:26.351925Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:23:29.962325Z", "action": "SPAWN_DENIED", "agent_name": "Chopper", "requester": null, "reason": "not_spawn_authority"}
+{"timestamp": "2026-02-07T09:23:39.040527Z", "action": "AGENT_SPAWNED", "session_id": "53874872-0179-4938-ac28-b4b617794d22", "agent_name": "Chopper", "job_type": "scout", "task_id": "4063176c-f186-4d1e-94f3-d6b0b2ac1876", "mode": "local", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T09:23:39.547608Z", "action": "AUTO_RELEASE_AGENT", "agent": "Chopper", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T09:23:39.547807Z", "action": "SESSION_COMPLETED", "session_id": "53874872-0179-4938-ac28-b4b617794d22", "agent_name": "Chopper", "status": "error", "turns": null}
+{"timestamp": "2026-02-07T09:23:44.982643Z", "action": "AGENT_SPAWNED", "session_id": "1c32e720-4603-42d4-8ba6-e8d2b3a8d2b5", "agent_name": "CP9", "job_type": "test", "task_id": "acbac4e8-567d-4453-9242-cdcbc3b8e5c5", "mode": "local", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T09:23:45.339768Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP9", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T09:23:45.339876Z", "action": "SESSION_COMPLETED", "session_id": "1c32e720-4603-42d4-8ba6-e8d2b3a8d2b5", "agent_name": "CP9", "status": "error", "turns": null}
+{"timestamp": "2026-02-07T09:26:25.461344Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:26:30.586954Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:26:32.713996Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "b539764f-17f5-4084-8eaa-ad689185b77e", "agent_name": "Chopper", "job_type": "scout", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 0.5}
+{"timestamp": "2026-02-07T09:26:35.757431Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:26:39.349623Z", "action": "LOCAL_AGENT_COMPLETED", "session_id": "b539764f-17f5-4084-8eaa-ad689185b77e", "agent_name": "Chopper", "status": "completed", "exit_code": 0, "cost_usd": 0.00805645}
+{"timestamp": "2026-02-07T09:26:39.352571Z", "action": "AUTO_RELEASE_AGENT", "agent": "Chopper", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T09:26:40.918531Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:26:45.994771Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:26:51.109318Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:26:56.184714Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:27:01.375114Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:27:06.458149Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:27:11.511372Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:27:16.592212Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:27:21.682077Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:27:26.776230Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:27:31.829770Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:27:36.881776Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:27:41.967512Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:27:47.027465Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:27:52.077375Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:27:57.168756Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:28:02.249440Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:28:07.435532Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:28:12.516245Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:28:17.603558Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:28:22.700047Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:28:27.933812Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:28:33.117463Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:28:38.370391Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:28:43.460391Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:28:48.623975Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:28:53.722431Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:28:58.826986Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:29:04.038713Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:29:09.015408Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:29:14.079499Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:29:19.227600Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:29:24.217770Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:29:29.357380Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:29:34.523438Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:29:39.666215Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:29:44.638512Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:29:49.739706Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:29:54.935866Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:29:59.999656Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:30:05.052267Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:30:10.132273Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:30:15.316927Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:30:20.269186Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:30:25.350612Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:30:30.603962Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:30:35.783679Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:30:40.747979Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:30:45.835474Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:30:51.002163Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:30:56.078089Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:31:01.162810Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:31:06.246104Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:31:11.294770Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:31:16.390370Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:31:21.491641Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:31:26.721346Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:31:31.860902Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:31:36.870339Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:31:41.955911Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:31:47.134999Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:31:52.209082Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:31:57.301033Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:32:02.368518Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:32:07.549857Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:32:12.801709Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:32:17.879474Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:32:22.947241Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:32:28.073452Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:32:33.252182Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:32:38.326975Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:32:43.430871Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:32:48.515615Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:32:53.767003Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:32:58.928726Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:33:03.995425Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:33:09.088783Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:33:14.166653Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:33:19.573567Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:33:24.652772Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:33:29.905595Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:33:34.958786Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:33:40.144745Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:33:45.267226Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:33:50.344299Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:33:55.418747Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:34:00.508720Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:34:05.567747Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:34:10.721908Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:34:15.724201Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:34:20.877704Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:34:25.988643Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:34:31.068034Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:34:36.167947Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:34:41.222709Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:34:46.394849Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:34:51.388943Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:34:56.572502Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:35:01.659188Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:35:06.834358Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:35:11.802318Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:35:16.900069Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:35:22.145168Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:35:27.339487Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:35:32.386067Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:35:37.476905Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:35:42.523722Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:35:47.617149Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:35:52.719765Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:35:57.790858Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:36:02.992602Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:36:08.189696Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:36:13.440600Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:36:18.508259Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:36:23.697305Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:36:28.805016Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:36:33.940022Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:36:39.120108Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:36:44.191655Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:36:49.314211Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:36:54.366942Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:36:59.423182Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:37:04.515193Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:37:09.602097Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:37:14.785561Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:37:19.873677Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:37:24.920931Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:37:30.038932Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:37:35.245020Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:37:40.481528Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:37:45.561759Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:37:50.728785Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:37:55.844493Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:38:00.982355Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:38:06.174925Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:38:11.394929Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:38:16.467562Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:38:21.558907Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:38:26.636379Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:38:31.709045Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:38:36.804173Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:38:41.887408Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:38:47.042960Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:44:37.280528Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:44:42.739349Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:44:47.893744Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:54:00.194267Z", "action": "AGENT_SPAWNED", "session_id": "bd9f485b-6a02-4b2e-b563-e97040e1064b", "agent_name": "msSunday", "job_type": "content_manager", "task_id": "c3ef7338-77e5-4165-9443-55dbfc367094", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T09:54:37.284283Z", "action": "AGENT_SPAWNED", "session_id": "55bde825-9f2a-4c30-9eaf-a25df5832cf8", "agent_name": "CP1", "job_type": "scanner", "task_id": "5f8fbbfc-9814-42ab-8c01-e3eddb0bf205", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T09:54:37.740368Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP1", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T09:54:37.740646Z", "action": "SESSION_COMPLETED", "session_id": "55bde825-9f2a-4c30-9eaf-a25df5832cf8", "agent_name": "CP1", "status": "error", "turns": null}
+{"timestamp": "2026-02-07T09:55:18.066913Z", "action": "AGENT_SPAWNED", "session_id": "899f4ebe-3515-4915-abde-1e36e3432499", "agent_name": "CP9", "job_type": "health_monitor", "task_id": "93e8623f-7af8-4d4b-8dbc-2be41f0994d6", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T09:55:18.486428Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP9", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T09:55:18.486738Z", "action": "SESSION_COMPLETED", "session_id": "899f4ebe-3515-4915-abde-1e36e3432499", "agent_name": "CP9", "status": "error", "turns": null}
+{"timestamp": "2026-02-07T09:55:47.445032Z", "action": "AGENT_SPAWNED", "session_id": "71833b42-243f-4fbf-8c29-c9ed0066acab", "agent_name": "msCounsel", "job_type": "compliance_counsel", "task_id": "e32c1b43-ac3d-40e5-949b-de3f66086a1e", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T09:55:47.813910Z", "action": "AUTO_RELEASE_AGENT", "agent": "msCounsel", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T09:55:47.814587Z", "action": "SESSION_COMPLETED", "session_id": "71833b42-243f-4fbf-8c29-c9ed0066acab", "agent_name": "msCounsel", "status": "error", "turns": null}
+{"timestamp": "2026-02-07T09:56:31.062558Z", "action": "AGENT_SPAWNED", "session_id": "4fa993e6-1b29-433d-9b77-518b88a2cb62", "agent_name": "Chopper", "job_type": "vessel_scout", "task_id": "46612fc9-b86b-4958-9a38-6fd7e714feba", "mode": "oneshot", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T09:56:31.610331Z", "action": "AUTO_RELEASE_AGENT", "agent": "Chopper", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T09:56:31.610538Z", "action": "SESSION_COMPLETED", "session_id": "4fa993e6-1b29-433d-9b77-518b88a2cb62", "agent_name": "Chopper", "status": "error", "turns": null}
+{"timestamp": "2026-02-07T10:00:37.295800Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "0454a994-3390-4453-9dc7-6029c1151bcb", "agent_name": "Chopper", "job_type": "scout", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 0.5}
+{"timestamp": "2026-02-07T10:00:42.366032Z", "action": "LOCAL_AGENT_COMPLETED", "session_id": "0454a994-3390-4453-9dc7-6029c1151bcb", "agent_name": "Chopper", "status": "completed", "exit_code": 0, "cost_usd": 0.0028934}
+{"timestamp": "2026-02-07T10:00:42.366961Z", "action": "AUTO_RELEASE_AGENT", "agent": "Chopper", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T10:03:03.775317Z", "action": "AUTO_RELEASE_AGENT", "agent": "msSunday", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T10:03:03.776019Z", "action": "SESSION_KILLED", "session_id": "bd9f485b-6a02-4b2e-b563-e97040e1064b", "agent_name": "msSunday", "requester": null}
+{"timestamp": "2026-02-07T10:11:55.548779Z", "action": "AGENT_SPAWNED", "session_id": "a73eab2a-a712-44a4-bb79-93e3d04bcd3a", "agent_name": "CP0", "job_type": "trader", "task_id": "97f06a46-ac60-4bfc-9b9c-0a35b5e6358b", "mode": "continuous", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T10:11:56.454820Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP0", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T10:11:56.455209Z", "action": "SESSION_COMPLETED", "session_id": "a73eab2a-a712-44a4-bb79-93e3d04bcd3a", "agent_name": "CP0", "status": "error", "turns": null}
+{"timestamp": "2026-02-07T10:22:24.199505Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "3b1c58e7-d72f-41f4-98f6-22b2078ba6f9", "agent_name": "CP0", "job_type": "trader", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 0.5}
+{"timestamp": "2026-02-07T10:22:28.769703Z", "action": "LOCAL_AGENT_COMPLETED", "session_id": "3b1c58e7-d72f-41f4-98f6-22b2078ba6f9", "agent_name": "CP0", "status": "completed", "exit_code": 0, "cost_usd": 0.0077024500000000004}
+{"timestamp": "2026-02-07T10:22:28.770791Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP0", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T10:38:51.380430Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "93be2b70-187b-48fe-936b-97a540eb58ec", "agent_name": "msSunday", "job_type": "content_manager", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 1.0}
+{"timestamp": "2026-02-07T10:38:54.760239Z", "action": "CONTENT_SCAN", "days_back": 7}
+{"timestamp": "2026-02-07T10:38:56.824006Z", "action": "CONTENT_LESSONS", "category": null, "limit": 50}
+{"timestamp": "2026-02-07T10:38:56.932552Z", "action": "CONTENT_QUEUE"}
+{"timestamp": "2026-02-07T10:39:08.187532Z", "action": "CONTENT_SUBMIT", "lesson_id": "f4caba1dd8db", "platform": "twitter", "author": "msSunday", "requester": "msSunday"}
+{"timestamp": "2026-02-07T10:39:13.115083Z", "action": "CONTENT_SUBMIT", "lesson_id": "1ad968b5ddb4", "platform": "twitter", "author": "msSunday", "requester": "msSunday"}
+{"timestamp": "2026-02-07T10:39:18.056197Z", "action": "CONTENT_SUBMIT", "lesson_id": "c994328f2037", "platform": "twitter", "author": "msSunday", "requester": "msSunday"}
+{"timestamp": "2026-02-07T10:39:22.780609Z", "action": "CONTENT_SUBMIT", "lesson_id": "164712d6adba", "platform": "twitter", "author": "msSunday", "requester": "msSunday"}
+{"timestamp": "2026-02-07T10:39:24.854916Z", "action": "CONTENT_QUEUE"}
+{"timestamp": "2026-02-07T10:39:30.211803Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "518becbc-9e25-45ab-a098-4ee55d0d7d9c", "agent_name": "CP1", "job_type": "scanner", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 1.0}
+{"timestamp": "2026-02-07T10:39:31.152803Z", "action": "NOTIFY_REQUESTED", "title": "\ud83d\udcca Content Pipeline Update \u2014 4 New Drafts Ready for Review", "requester": "msSunday"}
+{"timestamp": "2026-02-07T10:39:31.187445Z", "action": "NOTIFY_RESULT", "status_code": 200}
+{"timestamp": "2026-02-07T10:39:35.998955Z", "action": "FEED_CATALYSTS", "limit": 20, "min_score": 50.0, "requester": "CP1"}
+{"timestamp": "2026-02-07T10:39:36.142287Z", "action": "FEED_GRADUATING", "limit": 10, "requester": "CP1"}
+{"timestamp": "2026-02-07T10:39:37.845433Z", "action": "FEED_LAUNCHES", "limit": 10, "requester": "CP1"}
+{"timestamp": "2026-02-07T10:39:38.345349Z", "action": "FEED_TELEGRAM", "limit": 15, "requester": "CP1"}
+{"timestamp": "2026-02-07T10:40:04.151763Z", "action": "CONTENT_LESSONS", "category": "trade_lesson", "limit": 20}
+{"timestamp": "2026-02-07T10:40:07.061487Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "11d640ef-67d5-4970-9571-855fd0354612", "agent_name": "CP9", "job_type": "health_monitor", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 1.0}
+{"timestamp": "2026-02-07T10:40:09.476126Z", "action": "CONTENT_SUBMIT", "lesson_id": "84d726f5add9", "platform": "twitter", "author": "msSunday", "requester": "msSunday"}
+{"timestamp": "2026-02-07T10:40:11.799288Z", "action": "CONTENT_LESSONS", "category": "system_insight", "limit": 15}
+{"timestamp": "2026-02-07T10:40:15.299191Z", "action": "LOCAL_AGENT_COMPLETED", "session_id": "11d640ef-67d5-4970-9571-855fd0354612", "agent_name": "CP9", "status": "completed", "exit_code": 0, "cost_usd": 0.00800075}
+{"timestamp": "2026-02-07T10:40:15.300597Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP9", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T10:40:16.512415Z", "action": "CONTENT_SUBMIT", "lesson_id": "0e0b78b937fc", "platform": "twitter", "author": "msSunday", "requester": "msSunday"}
+{"timestamp": "2026-02-07T10:40:18.084294Z", "action": "CONTENT_QUEUE"}
+{"timestamp": "2026-02-07T10:40:24.899349Z", "action": "NOTIFY_REQUESTED", "title": "\u2705 Content Creation Complete \u2014 6 Drafts Ready for Review", "requester": "msSunday"}
+{"timestamp": "2026-02-07T10:40:24.939366Z", "action": "NOTIFY_RESULT", "status_code": 200}
+{"timestamp": "2026-02-07T10:40:44.018068Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "358ed7f1-03f6-4aa9-8ace-55330efc8c7e", "agent_name": "CP0", "job_type": "trader", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 1.0}
+{"timestamp": "2026-02-07T10:40:49.941840Z", "action": "POSITIONS", "agent_name": "CP0", "requester": "CP0"}
+{"timestamp": "2026-02-07T10:40:57.196312Z", "action": "LOCAL_AGENT_COMPLETED", "session_id": "358ed7f1-03f6-4aa9-8ace-55330efc8c7e", "agent_name": "CP0", "status": "completed", "exit_code": 0, "cost_usd": 0.00826115}
+{"timestamp": "2026-02-07T10:40:57.197853Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP0", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T10:40:59.703243Z", "action": "FEED_CATALYSTS", "limit": 20, "min_score": 50.0, "requester": "CP1"}
+{"timestamp": "2026-02-07T10:40:59.813600Z", "action": "FEED_GRADUATING", "limit": 10, "requester": "CP1"}
+{"timestamp": "2026-02-07T10:41:01.171670Z", "action": "FEED_TELEGRAM", "limit": 15, "requester": "CP1"}
+{"timestamp": "2026-02-07T10:41:11.514918Z", "action": "LOCAL_AGENT_COMPLETED", "session_id": "518becbc-9e25-45ab-a098-4ee55d0d7d9c", "agent_name": "CP1", "status": "completed", "exit_code": 0, "cost_usd": 0.0857174}
+{"timestamp": "2026-02-07T10:41:11.516236Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP1", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T10:41:33.023884Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "1a4e5fe6-9004-441b-8cba-cee016f3c210", "agent_name": "msCounsel", "job_type": "compliance_counsel", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 1.0}
+{"timestamp": "2026-02-07T10:41:39.821050Z", "action": "LOCAL_AGENT_COMPLETED", "session_id": "1a4e5fe6-9004-441b-8cba-cee016f3c210", "agent_name": "msCounsel", "status": "completed", "exit_code": 0, "cost_usd": 0.008404499999999999}
+{"timestamp": "2026-02-07T10:41:39.822436Z", "action": "AUTO_RELEASE_AGENT", "agent": "msCounsel", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T10:42:26.767455Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "ded4e0cf-bd57-4902-ae55-76517bb734f9", "agent_name": "Chopper", "job_type": "vessel_scout", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 1.0}
+{"timestamp": "2026-02-07T10:42:30.313671Z", "action": "FEED_CATALYSTS", "limit": 3, "min_score": 0, "requester": "Chopper"}
+{"timestamp": "2026-02-07T10:42:30.452707Z", "action": "FEED_GRADUATING", "limit": 5, "requester": "Chopper"}
+{"timestamp": "2026-02-07T10:42:31.656792Z", "action": "FEED_LAUNCHES", "limit": 5, "requester": "Chopper"}
+{"timestamp": "2026-02-07T10:42:33.465260Z", "action": "FEED_TELEGRAM", "limit": 5, "requester": "Chopper"}
+{"timestamp": "2026-02-07T10:42:49.410355Z", "action": "LOCAL_AGENT_COMPLETED", "session_id": "ded4e0cf-bd57-4902-ae55-76517bb734f9", "agent_name": "Chopper", "status": "completed", "exit_code": 0, "cost_usd": 0.047829449999999996}
+{"timestamp": "2026-02-07T10:42:49.411693Z", "action": "AUTO_RELEASE_AGENT", "agent": "Chopper", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T10:45:28.439185Z", "action": "CONTENT_SCAN", "days_back": 7}
+{"timestamp": "2026-02-07T10:45:45.471189Z", "action": "CONTENT_LESSONS", "category": null, "limit": 15}
+{"timestamp": "2026-02-07T10:45:49.427892Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "f4129b03-74b0-4033-89a9-3f317d903686", "agent_name": "msCounsel", "job_type": "compliance_counsel", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 0.5}
+{"timestamp": "2026-02-07T10:45:50.845789Z", "action": "CONTENT_SUBMIT", "lesson_id": "9491ced94438", "platform": "twitter", "author": "msSunday", "requester": "msSunday"}
+{"timestamp": "2026-02-07T10:45:53.084308Z", "action": "CONTENT_QUEUE"}
+{"timestamp": "2026-02-07T10:45:54.343152Z", "action": "LOCAL_AGENT_COMPLETED", "session_id": "f4129b03-74b0-4033-89a9-3f317d903686", "agent_name": "msCounsel", "status": "completed", "exit_code": 0, "cost_usd": 0.0023248}
+{"timestamp": "2026-02-07T10:45:54.344034Z", "action": "AUTO_RELEASE_AGENT", "agent": "msCounsel", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T10:46:01.264039Z", "action": "NOTIFY_REQUESTED", "title": "\ud83d\udce1 Content Manager Report \u2014 7 Drafts Ready, System Stable", "requester": "msSunday"}
+{"timestamp": "2026-02-07T10:46:01.298086Z", "action": "NOTIFY_RESULT", "status_code": 200}
+{"timestamp": "2026-02-07T10:51:07.903717Z", "action": "CONTENT_LESSONS", "category": null, "limit": 10}
+{"timestamp": "2026-02-07T10:51:13.499825Z", "action": "CONTENT_SUBMIT", "lesson_id": "f198deea57d4", "platform": "twitter", "author": "msSunday", "requester": "msSunday"}
+{"timestamp": "2026-02-07T10:51:15.354327Z", "action": "CONTENT_QUEUE"}
+{"timestamp": "2026-02-07T10:51:24.983257Z", "action": "NOTIFY_REQUESTED", "title": "\ud83c\udfac FINAL REPORT \u2014 Content Pipeline Complete & Monitoring Active", "requester": "msSunday"}
+{"timestamp": "2026-02-07T10:51:25.020066Z", "action": "NOTIFY_RESULT", "status_code": 200}
+{"timestamp": "2026-02-07T10:51:54.008710Z", "action": "AGENT_RELEASED", "agent": "msSunday", "old_position": "operations", "old_type": "content_manager", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T10:55:35.050888Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "221af83f-6a6c-450e-8a6e-64b7308fd94f", "agent_name": "CP0", "job_type": "trader", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 1.0}
+{"timestamp": "2026-02-07T10:55:41.419768Z", "action": "POSITIONS", "agent_name": "CP0", "requester": "CP0"}
+{"timestamp": "2026-02-07T10:55:41.498567Z", "action": "WALLET_STATUS", "agent_name": "CP0", "requester": "CP0"}
+{"timestamp": "2026-02-07T10:55:49.810273Z", "action": "NOTIFY_REQUESTED", "title": "MOLTBOOK STOP LOSS ALERT - CRITICAL", "requester": "CP0"}
+{"timestamp": "2026-02-07T10:55:49.852121Z", "action": "NOTIFY_RESULT", "status_code": 200}
+{"timestamp": "2026-02-07T10:55:53.683557Z", "action": "LOCAL_AGENT_COMPLETED", "session_id": "221af83f-6a6c-450e-8a6e-64b7308fd94f", "agent_name": "CP0", "status": "completed", "exit_code": 0, "cost_usd": 0.01150215}
+{"timestamp": "2026-02-07T10:55:53.684842Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP0", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T10:56:28.294410Z", "action": "CONTENT_SCAN", "days_back": 7}
+{"timestamp": "2026-02-07T11:01:33.363107Z", "action": "CONTENT_QUEUE"}
+{"timestamp": "2026-02-07T11:02:43.559385Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "3197bf48-fd23-4960-9b1a-5509903e968d", "agent_name": "CP1", "job_type": "scanner", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 1.0}
+{"timestamp": "2026-02-07T11:02:47.446592Z", "action": "FEED_CATALYSTS", "limit": 20, "min_score": 50.0, "requester": "CP1"}
+{"timestamp": "2026-02-07T11:02:47.574960Z", "action": "FEED_TELEGRAM", "limit": 50, "requester": "CP1"}
+{"timestamp": "2026-02-07T11:02:48.726296Z", "action": "FEED_LAUNCHES", "limit": 30, "requester": "CP1"}
+{"timestamp": "2026-02-07T11:02:49.090317Z", "action": "FEED_GRADUATING", "limit": 30, "requester": "CP1"}
+{"timestamp": "2026-02-07T11:03:13.996911Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "bad368c5-cfe1-4dfb-bedf-566a43e56a57", "agent_name": "CP0", "job_type": "trader", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 1.0}
+{"timestamp": "2026-02-07T11:03:17.165298Z", "action": "POSITIONS", "agent_name": "CP0", "requester": "CP0"}
+{"timestamp": "2026-02-07T11:03:17.243297Z", "action": "WALLET_STATUS", "agent_name": "CP0", "requester": "CP0"}
+{"timestamp": "2026-02-07T11:03:43.843734Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "7db7e0c0-fb72-4095-8536-9cc756bc97b8", "agent_name": "CP9", "job_type": "health_monitor", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 1.0}
+{"timestamp": "2026-02-07T11:03:51.226206Z", "action": "LOCAL_AGENT_COMPLETED", "session_id": "7db7e0c0-fb72-4095-8536-9cc756bc97b8", "agent_name": "CP9", "status": "completed", "exit_code": 0, "cost_usd": 0.0025614999999999995}
+{"timestamp": "2026-02-07T11:03:51.227419Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP9", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T11:04:07.157644Z", "action": "FEED_CATALYSTS", "limit": 20, "min_score": 50.0, "requester": "CP1"}
+{"timestamp": "2026-02-07T11:04:07.271301Z", "action": "FEED_TELEGRAM", "limit": 30, "requester": "CP1"}
+{"timestamp": "2026-02-07T11:04:07.457109Z", "action": "FEED_GRADUATING", "limit": 15, "requester": "CP1"}
+{"timestamp": "2026-02-07T11:04:11.836554Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "764ce7a3-d3b0-4118-a1f8-0051ae15d4ae", "agent_name": "msSunday", "job_type": "content_manager", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 1.0}
+{"timestamp": "2026-02-07T11:04:15.317859Z", "action": "CONTENT_SCAN", "days_back": 7}
+{"timestamp": "2026-02-07T11:04:16.797656Z", "action": "CONTENT_LESSONS", "category": null, "limit": 50}
+{"timestamp": "2026-02-07T11:04:16.902541Z", "action": "CONTENT_QUEUE"}
+{"timestamp": "2026-02-07T11:04:20.630930Z", "action": "NOTIFY_REQUESTED", "title": "msSunday Content Manager Online", "requester": "msSunday"}
+{"timestamp": "2026-02-07T11:04:20.667746Z", "action": "NOTIFY_RESULT", "status_code": 200}
+{"timestamp": "2026-02-07T11:04:31.979629Z", "action": "CONTENT_SUBMIT", "lesson_id": "56211844e511", "platform": "twitter", "author": "msSunday", "requester": "msSunday"}
+{"timestamp": "2026-02-07T11:04:36.165796Z", "action": "CONTENT_SUBMIT", "lesson_id": "8d5ae21cfc07", "platform": "twitter", "author": "msSunday", "requester": "msSunday"}
+{"timestamp": "2026-02-07T11:04:40.876894Z", "action": "CONTENT_SUBMIT", "lesson_id": "b2fac0a358e3", "platform": "twitter", "author": "msSunday", "requester": "msSunday"}
+{"timestamp": "2026-02-07T11:04:44.803810Z", "action": "CONTENT_SUBMIT", "lesson_id": "d126ea2070a3", "platform": "twitter", "author": "msSunday", "requester": "msSunday"}
+{"timestamp": "2026-02-07T11:04:48.195651Z", "action": "CONTENT_SUBMIT", "lesson_id": "f700c27aa66f", "platform": "twitter", "author": "msSunday", "requester": "msSunday"}
+{"timestamp": "2026-02-07T11:04:52.193756Z", "action": "NOTIFY_REQUESTED", "title": "Content Draft Submission Complete", "requester": "msSunday"}
+{"timestamp": "2026-02-07T11:04:52.228374Z", "action": "NOTIFY_RESULT", "status_code": 200}
+{"timestamp": "2026-02-07T11:04:56.135094Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "d22b54ec-56f1-4a44-9ed9-98fb2feef23e", "agent_name": "msCounsel", "job_type": "compliance_counsel", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 1.0}
+{"timestamp": "2026-02-07T11:05:05.870025Z", "action": "LOCAL_AGENT_COMPLETED", "session_id": "d22b54ec-56f1-4a44-9ed9-98fb2feef23e", "agent_name": "msCounsel", "status": "completed", "exit_code": 0, "cost_usd": 0.0034945999999999996}
+{"timestamp": "2026-02-07T11:05:05.870793Z", "action": "AUTO_RELEASE_AGENT", "agent": "msCounsel", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T11:05:06.924383Z", "action": "TRANSACTIONS", "agent_name": "CP0", "requester": "CP0", "limit": 20}
+{"timestamp": "2026-02-07T11:05:26.421657Z", "action": "LOCAL_AGENT_COMPLETED", "session_id": "3197bf48-fd23-4960-9b1a-5509903e968d", "agent_name": "CP1", "status": "completed", "exit_code": 0, "cost_usd": 0.0905465}
+{"timestamp": "2026-02-07T11:05:26.426050Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP1", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T11:06:03.884943Z", "action": "SELL_REQUESTED", "agent_name": "CP0", "requester": "CP0", "token_mint": "BsthswihbFBEwDhKfAWieSZ6UiJwGxtykyQPCmhpump", "percent": 10.0, "slippage_bps": 75}
+{"timestamp": "2026-02-07T11:06:06.020816Z", "action": "SELL_RESULT", "agent_name": "CP0", "status_code": 200, "signature": "5csirLbQ3Le3BJ7svY4qWPp2bsWFCUe7UdBdRK7oUWQQojLkSSzvWNGpwtBkQ2Kvem5jkfeoxXKizftp3eaiXqhN"}
+{"timestamp": "2026-02-07T11:06:07.418480Z", "action": "AUTO_RETURN_SOL", "from_agent": "CP0", "to_agent": "MsWednesday", "amount_sol": 0.003638243, "signature": "5Tz74mxJeUEdbm7XFNsk6ne9a8Rd3ANx6aNSzSYZeCthL4oJ6jCqUrqSTSp5Cw8zLsXdTbsqW8hfymr6XNQijct"}
+{"timestamp": "2026-02-07T11:06:27.508012Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "737a0954-6918-404f-8d20-2169eb23637f", "agent_name": "Chopper", "job_type": "vessel_scout", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 1.0}
+{"timestamp": "2026-02-07T11:06:31.060583Z", "action": "FEED_CATALYSTS", "limit": 3, "min_score": 0, "requester": "Chopper"}
+{"timestamp": "2026-02-07T11:06:31.203400Z", "action": "FEED_GRADUATING", "limit": 5, "requester": "Chopper"}
+{"timestamp": "2026-02-07T11:06:32.059095Z", "action": "FEED_LAUNCHES", "limit": 5, "requester": "Chopper"}
+{"timestamp": "2026-02-07T11:06:32.431719Z", "action": "FEED_TELEGRAM", "limit": 5, "requester": "Chopper"}
+{"timestamp": "2026-02-07T11:06:58.554593Z", "action": "LOCAL_AGENT_COMPLETED", "session_id": "737a0954-6918-404f-8d20-2169eb23637f", "agent_name": "Chopper", "status": "completed", "exit_code": 0, "cost_usd": 0.042284150000000006}
+{"timestamp": "2026-02-07T11:06:58.555893Z", "action": "AUTO_RELEASE_AGENT", "agent": "Chopper", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T11:07:14.016627Z", "action": "POSITIONS", "agent_name": "CP0", "requester": "CP0"}
+{"timestamp": "2026-02-07T11:08:20.091668Z", "action": "POSITIONS", "agent_name": "CP0", "requester": "CP0"}
+{"timestamp": "2026-02-07T11:09:54.385377Z", "action": "POSITIONS", "agent_name": "CP0", "requester": "CP0"}
+{"timestamp": "2026-02-07T11:09:55.990620Z", "action": "CONTENT_QUEUE"}
+{"timestamp": "2026-02-07T11:11:15.706281Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP0", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T11:11:15.706923Z", "action": "SESSION_KILLED", "session_id": "bad368c5-cfe1-4dfb-bedf-566a43e56a57", "agent_name": "CP0", "requester": null}
+{"timestamp": "2026-02-07T11:11:15.707498Z", "action": "LOCAL_AGENT_COMPLETED", "session_id": "bad368c5-cfe1-4dfb-bedf-566a43e56a57", "agent_name": "CP0", "status": "error", "exit_code": -15, "cost_usd": null}
+{"timestamp": "2026-02-07T11:11:15.708035Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP0", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T11:11:21.371299Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "6f0f65f0-a638-4bc5-8b5c-776e6befd6e4", "agent_name": "CP0", "job_type": "trader", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 1.0}
+{"timestamp": "2026-02-07T11:11:24.465168Z", "action": "SELL_REQUESTED", "agent_name": "CP0", "requester": "CP0", "token_mint": "BsthswihbFBEwDhKfAWieSZ6UiJwGxtykyQPCmhpump", "percent": 0.35, "slippage_bps": 75}
+{"timestamp": "2026-02-07T11:11:24.501347Z", "action": "SELL_RESULT", "agent_name": "CP0", "status_code": 400, "signature": "none"}
+{"timestamp": "2026-02-07T11:11:28.091988Z", "action": "NOTIFY_REQUESTED", "title": "SELL ORDER EXECUTION BLOCKED - Precision Constraint", "requester": "CP0"}
+{"timestamp": "2026-02-07T11:11:28.129941Z", "action": "NOTIFY_RESULT", "status_code": 200}
+{"timestamp": "2026-02-07T11:11:31.329418Z", "action": "LOCAL_AGENT_COMPLETED", "session_id": "6f0f65f0-a638-4bc5-8b5c-776e6befd6e4", "agent_name": "CP0", "status": "completed", "exit_code": 0, "cost_usd": 0.0063731000000000005}
+{"timestamp": "2026-02-07T11:11:31.330708Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP0", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T11:11:42.193233Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "827141b5-bfc8-4213-a152-0e7d9ca7c687", "agent_name": "CP0", "job_type": "trader", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 1.0}
+{"timestamp": "2026-02-07T11:11:44.496480Z", "action": "POSITIONS", "agent_name": "CP0", "requester": "CP0"}
+{"timestamp": "2026-02-07T11:11:46.382024Z", "action": "SELL_REQUESTED", "agent_name": "CP0", "requester": "CP0", "token_mint": "BsthswihbFBEwDhKfAWieSZ6UiJwGxtykyQPCmhpump", "percent": 100.0, "slippage_bps": 75}
+{"timestamp": "2026-02-07T11:11:51.270100Z", "action": "AGENT_RELEASED", "agent": "CP0", "old_position": "BsthswihbFBEwDhKfAWieSZ6UiJwGxtykyQPCmhpump", "old_type": "trader", "requester": null}
+{"timestamp": "2026-02-07T11:11:51.281459Z", "action": "SELL_RESULT", "agent_name": "CP0", "status_code": 200, "signature": "cP3zBo9p8MZKuuSg4WiH2Zueohy8sgpJeurgveLmiWW4rzwaiT4RM7o83mNKPbLaTy9NHWx2X3oyWue1qdwjyWm"}
+{"timestamp": "2026-02-07T11:11:52.641736Z", "action": "AUTO_RETURN_SOL_FAILED", "from_agent": "CP0", "to_agent": "MsWednesday", "error": "{\"error\":\"Transaction simulation failed: Error processing Instruction 2: custom program error: 0x1\",\"success\":false}\n"}
+{"timestamp": "2026-02-07T11:11:52.644398Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP0", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T11:11:53.536693Z", "action": "POSITIONS", "agent_name": "CP0", "requester": "CP0"}
+{"timestamp": "2026-02-07T11:11:54.882670Z", "action": "NOTIFY_REQUESTED", "title": "MOLTBOOK Liquidation Complete", "requester": "CP0"}
+{"timestamp": "2026-02-07T11:11:54.935654Z", "action": "NOTIFY_RESULT", "status_code": 200}
+{"timestamp": "2026-02-07T11:11:56.402047Z", "action": "WALLET_STATUS", "agent_name": "CP0", "requester": "CP0"}
+{"timestamp": "2026-02-07T11:12:00.776652Z", "action": "LOCAL_AGENT_COMPLETED", "session_id": "827141b5-bfc8-4213-a152-0e7d9ca7c687", "agent_name": "CP0", "status": "completed", "exit_code": 0, "cost_usd": 0.013368149999999999}
+{"timestamp": "2026-02-07T11:12:00.777762Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP0", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T11:13:12.901850Z", "action": "AUTO_RELEASE_AGENT", "agent": "msSunday", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T11:13:12.902164Z", "action": "SESSION_KILLED", "session_id": "764ce7a3-d3b0-4118-a1f8-0051ae15d4ae", "agent_name": "msSunday", "requester": null}
+{"timestamp": "2026-02-07T11:13:12.902713Z", "action": "LOCAL_AGENT_COMPLETED", "session_id": "764ce7a3-d3b0-4118-a1f8-0051ae15d4ae", "agent_name": "msSunday", "status": "error", "exit_code": -15, "cost_usd": null}
+{"timestamp": "2026-02-07T11:13:12.903280Z", "action": "AUTO_RELEASE_AGENT", "agent": "msSunday", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T11:16:46.199163Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "3121b53d-bab5-4ae6-b7cb-b974885f5325", "agent_name": "CP1", "job_type": "scanner", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 1.0}
+{"timestamp": "2026-02-07T11:16:50.015928Z", "action": "FEED_CATALYSTS", "limit": 20, "min_score": 50.0, "requester": "CP1"}
+{"timestamp": "2026-02-07T11:16:50.136278Z", "action": "FEED_GRADUATING", "limit": 30, "requester": "CP1"}
+{"timestamp": "2026-02-07T11:16:51.502670Z", "action": "FEED_LAUNCHES", "limit": 30, "requester": "CP1"}
+{"timestamp": "2026-02-07T11:16:52.001955Z", "action": "FEED_TELEGRAM", "limit": 50, "requester": "CP1"}
+{"timestamp": "2026-02-07T11:17:18.785629Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "607b0537-d36c-4753-bd71-9be64edddc94", "agent_name": "msSunday", "job_type": "content_manager", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 1.0}
+{"timestamp": "2026-02-07T11:17:23.737338Z", "action": "CONTENT_SCAN", "days_back": 7}
+{"timestamp": "2026-02-07T11:17:23.993614Z", "action": "CONTENT_LESSONS", "category": null, "limit": 50}
+{"timestamp": "2026-02-07T11:17:24.116304Z", "action": "CONTENT_QUEUE"}
+{"timestamp": "2026-02-07T11:17:39.055341Z", "action": "CONTENT_LESSONS", "category": "security_event", "limit": 50}
+{"timestamp": "2026-02-07T11:17:39.216200Z", "action": "CONTENT_LESSONS", "category": "system_insight", "limit": 50}
+{"timestamp": "2026-02-07T11:17:49.188996Z", "action": "CONTENT_SUBMIT", "lesson_id": "c3b79feba443", "platform": "twitter", "author": "msSunday", "requester": "msSunday"}
+{"timestamp": "2026-02-07T11:17:49.242513Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "7ceb7422-32c3-4150-aa40-41336892bdf9", "agent_name": "CP9", "job_type": "health_monitor", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 1.0}
+{"timestamp": "2026-02-07T11:17:51.544942Z", "action": "CONTENT_LESSONS", "category": "trade_lesson", "limit": 50}
+{"timestamp": "2026-02-07T11:17:51.712257Z", "action": "CONTENT_LESSONS", "category": "debugging_story", "limit": 50}
+{"timestamp": "2026-02-07T11:17:56.283376Z", "action": "WALLET_STATUS", "agent_name": "CP9", "requester": "CP9"}
+{"timestamp": "2026-02-07T11:18:01.807987Z", "action": "CONTENT_SUBMIT", "lesson_id": "3dd552c932d7", "platform": "twitter", "author": "msSunday", "requester": "msSunday"}
+{"timestamp": "2026-02-07T11:18:08.801699Z", "action": "CONTENT_SUBMIT", "lesson_id": "c4af9657ea72", "platform": "twitter", "author": "msSunday", "requester": "msSunday"}
+{"timestamp": "2026-02-07T11:18:11.703443Z", "action": "FEED_CATALYSTS", "limit": 20, "min_score": 50.0, "requester": "CP1"}
+{"timestamp": "2026-02-07T11:18:11.904561Z", "action": "FEED_GRADUATING", "limit": 30, "requester": "CP1"}
+{"timestamp": "2026-02-07T11:18:13.107923Z", "action": "FEED_TELEGRAM", "limit": 50, "requester": "CP1"}
+{"timestamp": "2026-02-07T11:18:16.451777Z", "action": "CONTENT_SUBMIT", "lesson_id": "da0c96fb787c", "platform": "twitter", "author": "msSunday", "requester": "msSunday"}
+{"timestamp": "2026-02-07T11:18:18.447162Z", "action": "CONTENT_QUEUE"}
+{"timestamp": "2026-02-07T11:18:20.718848Z", "action": "NOTIFY_REQUESTED", "title": "Content Manager: 4 New Drafts Created", "requester": "msSunday"}
+{"timestamp": "2026-02-07T11:18:20.758783Z", "action": "NOTIFY_RESULT", "status_code": 200}
+{"timestamp": "2026-02-07T11:18:30.381689Z", "action": "CONTENT_LESSONS", "category": "feature_update", "limit": 50}
+{"timestamp": "2026-02-07T11:18:37.295993Z", "action": "CONTENT_SUBMIT", "lesson_id": "ac899e9ceda8", "platform": "twitter", "author": "msSunday", "requester": "msSunday"}
+{"timestamp": "2026-02-07T11:18:44.905067Z", "action": "CONTENT_SUBMIT", "lesson_id": "f8fa16dc16e5", "platform": "twitter", "author": "msSunday", "requester": "msSunday"}
+{"timestamp": "2026-02-07T11:18:48.444850Z", "action": "NOTIFY_REQUESTED", "title": "Content Manager: 6 New Drafts in Session", "requester": "msSunday"}
+{"timestamp": "2026-02-07T11:18:48.486035Z", "action": "NOTIFY_RESULT", "status_code": 200}
+{"timestamp": "2026-02-07T11:19:35.252113Z", "action": "LOCAL_AGENT_COMPLETED", "session_id": "3121b53d-bab5-4ae6-b7cb-b974885f5325", "agent_name": "CP1", "status": "completed", "exit_code": 0, "cost_usd": 0.09054725}
+{"timestamp": "2026-02-07T11:19:35.253950Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP1", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T11:21:07.436132Z", "action": "AGENT_SPAWNED_LOCAL", "session_id": "a6c5610c-6495-4dcd-b0b2-eabb54be9b84", "agent_name": "CP0", "job_type": "trader", "mode": "local", "requester": "MsWednesday", "max_budget_usd": 1.0}
+{"timestamp": "2026-02-07T11:21:15.379357Z", "action": "LOCAL_AGENT_COMPLETED", "session_id": "a6c5610c-6495-4dcd-b0b2-eabb54be9b84", "agent_name": "CP0", "status": "completed", "exit_code": 0, "cost_usd": 0.00346335}
+{"timestamp": "2026-02-07T11:21:15.380565Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP0", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T11:23:52.066261Z", "action": "CONTENT_SCAN", "days_back": 7}
+{"timestamp": "2026-02-07T11:23:52.248555Z", "action": "CONTENT_QUEUE"}
+{"timestamp": "2026-02-07T11:24:00.569567Z", "action": "CONTENT_SUBMIT", "lesson_id": "345ba86f4816", "platform": "twitter", "author": "msSunday", "requester": "msSunday"}
+{"timestamp": "2026-02-07T11:24:08.180152Z", "action": "CONTENT_SUBMIT", "lesson_id": "c40bf13c449c", "platform": "twitter", "author": "msSunday", "requester": "msSunday"}
+{"timestamp": "2026-02-07T11:24:12.888643Z", "action": "NOTIFY_REQUESTED", "title": "Content Manager: 24 Drafts Ready for Review", "requester": "msSunday"}
+{"timestamp": "2026-02-07T11:24:12.917283Z", "action": "NOTIFY_RESULT", "status_code": 200}
+{"timestamp": "2026-02-07T11:24:33.802201Z", "action": "NOTIFY_REQUESTED", "title": "CP9 Health Monitor: 6min Baseline Report", "requester": "CP9"}
+{"timestamp": "2026-02-07T11:24:33.836405Z", "action": "NOTIFY_RESULT", "status_code": 200}
+{"timestamp": "2026-02-07T11:25:15.624043Z", "action": "AUTO_RELEASE_AGENT", "agent": "msSunday", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T11:25:15.624183Z", "action": "SESSION_KILLED", "session_id": "607b0537-d36c-4753-bd71-9be64edddc94", "agent_name": "msSunday", "requester": null}
+{"timestamp": "2026-02-07T11:25:15.624762Z", "action": "LOCAL_AGENT_COMPLETED", "session_id": "607b0537-d36c-4753-bd71-9be64edddc94", "agent_name": "msSunday", "status": "error", "exit_code": -15, "cost_usd": null}
+{"timestamp": "2026-02-07T11:25:15.625290Z", "action": "AUTO_RELEASE_AGENT", "agent": "msSunday", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T11:25:15.669101Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP9", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T11:25:15.669207Z", "action": "SESSION_KILLED", "session_id": "7ceb7422-32c3-4150-aa40-41336892bdf9", "agent_name": "CP9", "requester": null}
+{"timestamp": "2026-02-07T11:25:15.669661Z", "action": "LOCAL_AGENT_COMPLETED", "session_id": "7ceb7422-32c3-4150-aa40-41336892bdf9", "agent_name": "CP9", "status": "error", "exit_code": -15, "cost_usd": null}
+{"timestamp": "2026-02-07T11:25:15.670064Z", "action": "AUTO_RELEASE_AGENT", "agent": "CP9", "reason": "no_tokens_remaining"}

@@ -491,24 +491,33 @@ def relay_log(action: str, details: dict):
 # --- Agent Availability State ---
 
 def _read_availability() -> dict:
-    """Read agent availability state. Returns default if file missing."""
+    """Read agent availability state. Returns default if file missing. Enforces permanent roles."""
     if not AGENT_AVAILABILITY_FILE.exists():
-        return {
+        state = {
             'timestamp': datetime.utcnow().isoformat() + 'Z',
             'agents': {
                 'CP0': {'status': 'idle', 'position': None, 'assigned_at': None, 'type': None, 'last_checkin': None},
                 'CP1': {'status': 'idle', 'position': None, 'assigned_at': None, 'type': None, 'last_checkin': None},
                 'CP9': {'status': 'idle', 'position': None, 'assigned_at': None, 'type': None, 'last_checkin': None},
                 'msSunday': {'status': 'idle', 'position': None, 'assigned_at': None, 'type': None, 'last_checkin': None},
-                'msCounsel': {'status': 'idle', 'position': None, 'assigned_at': None, 'type': None, 'last_checkin': None},
-                'Chopper': {'status': 'idle', 'position': None, 'assigned_at': None, 'type': None, 'last_checkin': None},
+                'msCounsel': {'status': 'idle', 'position': None, 'assigned_at': None, 'type': 'compliance_counsel', 'last_checkin': None},
+                'Chopper': {'status': 'idle', 'position': None, 'assigned_at': None, 'type': 'scout', 'last_checkin': None},
             },
         }
-    try:
-        with open(AGENT_AVAILABILITY_FILE) as f:
-            return json.load(f)
-    except (json.JSONDecodeError, IOError):
-        return {'timestamp': None, 'agents': {}}
+    else:
+        try:
+            with open(AGENT_AVAILABILITY_FILE) as f:
+                state = json.load(f)
+        except (json.JSONDecodeError, IOError):
+            state = {'timestamp': None, 'agents': {}}
+
+    # Enforce permanent roles for idle agents
+    agents = state.get('agents', {})
+    for agent_name, role in PERMANENT_ROLES.items():
+        if agent_name in agents and agents[agent_name].get('status') == 'idle':
+            agents[agent_name]['type'] = role
+
+    return state
 
 
 def _write_availability(state: dict):
@@ -754,8 +763,14 @@ async def _auto_return_sol(from_agent: str, to_agent: str, amount_sol: float = N
         return {'success': False, 'error': str(e)}
 
 
+# Agents with permanent roles — type persists across releases
+PERMANENT_ROLES = {
+    'msCounsel': 'compliance_counsel',
+    'Chopper': 'scout',
+}
+
 async def _auto_release_agent(agent_name: str):
-    """Release agent to idle after final sell (no tokens remaining)."""
+    """Release agent to idle. Permanent-role agents keep their type; others reset to null."""
     try:
         state = _read_availability()
         agents = state.get('agents', {})
@@ -763,7 +778,7 @@ async def _auto_release_agent(agent_name: str):
             agents[agent_name]['status'] = 'idle'
             agents[agent_name]['position'] = None
             agents[agent_name]['assigned_at'] = None
-            agents[agent_name]['type'] = None
+            agents[agent_name]['type'] = PERMANENT_ROLES.get(agent_name)
             agents[agent_name]['last_checkin'] = None
             _write_availability(state)
             relay_log('AUTO_RELEASE_AGENT', {'agent': agent_name, 'reason': 'no_tokens_remaining'})
