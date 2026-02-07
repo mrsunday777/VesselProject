@@ -3,3 +3,4 @@
 [2026-02-07 00:59:07] RESTORE BLOCKED checkpoint='Test Checkpoint' reason=preflight_failed
 [2026-02-07 00:59:16] RESTORE BLOCKED checkpoint='Test Checkpoint' reason=preflight_failed
 [2026-02-07 01:17:24] CREATE checkpoint='Checkpoint System Live' id=checkpoint-system-live-2026-02-07-011721 tag=checkpoint-2026-02-07-011721-checkpoint-system-live commits={"MsWednesday": "50c0387", "VesselProject": "43aaf67"}
+[2026-02-07 03:41:47] CREATE checkpoint='Pre-Migration — Relay Architecture Final' id=pre-migration-relay-architecture-final-2026-02-07-034144 tag=checkpoint-2026-02-07-034144-pre-migration-relay-architecture-final commits={"MsWednesday": "7b317c4", "VesselProject": "0044b80"}

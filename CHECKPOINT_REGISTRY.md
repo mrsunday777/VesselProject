@@ -17,3 +17,11 @@ All checkpoints for MsWednesday + VesselProject, in chronological order.
 - **VesselProject:** 43aaf67
 - **State:** 14 files captured
 - **Restore:** `checkpoint restore "Checkpoint System Live"`
+
+## Pre-Migration — Relay Architecture Final
+- **Date:** 2026-02-07 03:41:44 PST
+- **Tag:** checkpoint-2026-02-07-034144-pre-migration-relay-architecture-final
+- **MsWednesday:** 7b317c4
+- **VesselProject:** 0044b80
+- **State:** 14 files captured
+- **Restore:** `checkpoint restore "Pre-Migration — Relay Architecture Final"`

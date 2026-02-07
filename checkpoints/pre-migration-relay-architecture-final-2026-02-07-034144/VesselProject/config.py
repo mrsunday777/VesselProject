@@ -1,0 +1,25 @@
+import os
+
+SERVER_HOST = "0.0.0.0"
+SERVER_PORT = 8777
+VESSEL_SECRET = "mrsunday"
+VESSEL_ID = "phone-01"
+ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
+MAX_TASK_OUTPUT = 10000
+TASK_TIMEOUT = 300
+
+# Agent session limits
+AGENT_SESSION_TIMEOUT = 4 * 3600  # 4 hours max per agent session
+AGENT_MAX_TURNS = 20              # Max agentic loop turns per session
+
+# Load API key from secrets file (not tracked by git), fall back to environment variable
+ANTHROPIC_API_KEY = ""
+try:
+    with open(os.path.join(os.path.dirname(__file__), "secrets.txt")) as f:
+        for line in f:
+            if line.startswith("ANTHROPIC_API_KEY="):
+                ANTHROPIC_API_KEY = line.split("=", 1)[1].strip()
+except FileNotFoundError:
+    pass
+if not ANTHROPIC_API_KEY:
+    ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")

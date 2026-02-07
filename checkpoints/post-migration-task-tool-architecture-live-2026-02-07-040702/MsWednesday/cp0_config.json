@@ -1,0 +1,81 @@
+{
+  "scanner_config": {
+    "name": "CP0 Telegram Token Scanner",
+    "version": "1.0",
+    "purpose": "Monitor Telegram for micro-cap token opportunities",
+    "scan_interval_seconds": 60
+  },
+  
+  "filters": {
+    "market_cap": {
+      "max_usd": 100000,
+      "description": "Only tokens with MCap < $100K"
+    },
+    "volume_24h": {
+      "min_usd": 500000,
+      "description": "Only tokens with 24h volume > $500K"
+    }
+  },
+  
+  "scoring": {
+    "mcap_ultra_low": {
+      "threshold": 50000,
+      "points": 30,
+      "description": "MCap < $50K is highly volatile"
+    },
+    "mcap_low": {
+      "threshold": 100000,
+      "points": 15,
+      "description": "MCap $50K-$100K has growth potential"
+    },
+    "volume_strong": {
+      "threshold": 1000000,
+      "points": 25,
+      "description": "Volume > $1M shows demand"
+    },
+    "volume_solid": {
+      "threshold": 500000,
+      "points": 10,
+      "description": "Volume > $500K is baseline"
+    },
+    "liquidity_good": {
+      "threshold": 0.3,
+      "points": 20,
+      "description": "Liquidity > 30% of MCap is healthy"
+    },
+    "momentum_positive": {
+      "threshold": 0.6,
+      "points": 20,
+      "description": "Momentum score > 0.6 is bullish"
+    }
+  },
+  
+  "minimum_score_threshold": 30,
+  "report_top_n": 5,
+  
+  "telegram_channels": {
+    "monitored": [
+      "gem_hunters",
+      "micro_cap_tokens",
+      "dex_listings",
+      "new_token_launches",
+      "community_feeds"
+    ]
+  },
+  
+  "output": {
+    "log_file": "~/cp0_scan.log",
+    "log_level": "INFO",
+    "format": "timestamp | level | message",
+    "summary_interval_scans": 10,
+    "cache_file": "~/.cp0_feed_cache.json"
+  },
+  
+  "strategy": {
+    "target_trade_type": "swing_trade",
+    "entry_criteria": "score >= 40, volume trending up, community sentiment positive",
+    "risk_level": "high",
+    "typical_hold_duration": "hours to days",
+    "use_case": "MsWednesday portfolio entry decisions"
+  }
+}

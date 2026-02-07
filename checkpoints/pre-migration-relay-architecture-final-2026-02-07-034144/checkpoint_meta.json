@@ -1,0 +1,11 @@
+{
+  "name": "Pre-Migration \u2014 Relay Architecture Final",
+  "id": "pre-migration-relay-architecture-final-2026-02-07-034144",
+  "tag": "checkpoint-2026-02-07-034144-pre-migration-relay-architecture-final",
+  "timestamp": "2026-02-07 03:41:44",
+  "commits": {
+    "MsWednesday": "7b317c4",
+    "VesselProject": "0044b80"
+  },
+  "state_file_count": 14
+}
