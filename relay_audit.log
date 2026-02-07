@@ -225,3 +225,25 @@
 {"timestamp": "2026-02-07T06:49:35.694848Z", "action": "AGENT_SPAWNED", "session_id": "2222daf8-ecdc-477a-b8d6-070d16ca0e81", "agent_name": "Chopper", "job_type": "scout", "task_id": "46f2ece2-172a-4313-9422-819f7f64a1d7", "mode": "oneshot", "requester": "MsWednesday"}
 {"timestamp": "2026-02-07T06:49:36.129234Z", "action": "AUTO_RELEASE_AGENT", "agent": "Chopper", "reason": "no_tokens_remaining"}
 {"timestamp": "2026-02-07T06:49:36.129712Z", "action": "SESSION_COMPLETED", "session_id": "2222daf8-ecdc-477a-b8d6-070d16ca0e81", "agent_name": "Chopper", "status": "error", "turns": null}
+{"timestamp": "2026-02-07T09:14:17.402627Z", "action": "AGENT_SPAWNED", "session_id": "efd982ff-983c-468e-a176-93cf69a34bd9", "agent_name": "Chopper", "job_type": "scout", "task_id": "4cc16191-69b7-45b4-a6d0-44988da5be01", "mode": "local", "requester": "MsWednesday"}
+{"timestamp": "2026-02-07T09:14:17.972880Z", "action": "AUTO_RELEASE_AGENT", "agent": "Chopper", "reason": "no_tokens_remaining"}
+{"timestamp": "2026-02-07T09:14:17.973064Z", "action": "SESSION_COMPLETED", "session_id": "efd982ff-983c-468e-a176-93cf69a34bd9", "agent_name": "Chopper", "status": "error", "turns": null}
+{"timestamp": "2026-02-07T09:15:48.499484Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:15:53.552279Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:15:58.673321Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:16:03.734057Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:16:08.778855Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:16:13.884863Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:16:18.935596Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:16:24.003194Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:16:29.087763Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:16:34.185523Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:16:39.331031Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:16:44.437187Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:16:49.536329Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:16:54.616535Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:16:59.703490Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:17:04.923237Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:17:10.031628Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:17:15.205199Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}
+{"timestamp": "2026-02-07T09:17:20.280087Z", "action": "WS_DUPLICATE_REJECTED", "vessel_id": "phone-01"}

@@ -1,0 +1,4 @@
+[2026-02-07 00:58:34] CREATE checkpoint='Test Checkpoint' id=test-checkpoint-2026-02-07-005832 tag=checkpoint-2026-02-07-005832-test-checkpoint commits={"MsWednesday": "fe5cd01", "VesselProject": "083bbc6"}
+[2026-02-07 00:58:42] RESTORE BLOCKED checkpoint='Test Checkpoint' reason=preflight_failed
+[2026-02-07 00:59:07] RESTORE BLOCKED checkpoint='Test Checkpoint' reason=preflight_failed
+[2026-02-07 00:59:16] RESTORE BLOCKED checkpoint='Test Checkpoint' reason=preflight_failed

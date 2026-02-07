@@ -565,23 +565,19 @@ def _check_agents_idle(config):
         resp = urllib.request.urlopen(req, timeout=5)
         data = json.loads(resp.read().decode())
 
-        # Handle both dict and list formats
-        agents = data if isinstance(data, dict) else {}
-        if isinstance(data, list):
-            agents = {a.get("name", f"agent-{i}"): a for i, a in enumerate(data)}
+        # Response format: {"timestamp": "...", "agents": {"CP0": {...}, ...}}
+        agents = data.get("agents", {}) if isinstance(data, dict) else {}
 
         busy = []
-        for name, info in agents.items():
+        for agent_name, info in agents.items():
             status = info.get("status", "unknown") if isinstance(info, dict) else str(info)
             if status not in ("idle", "available", "offline"):
-                busy.append(f"{name} (status: {status})")
+                busy.append(f"{agent_name} (status: {status})")
 
         if busy:
             return False, "; ".join(busy)
         return True, None
     except Exception as e:
-        # If relay is down, we already catch that in check 1
-        # Here we just say agents can't be verified
         return False, f"Could not reach relay: {e}"
 
 
@@ -601,7 +597,7 @@ def _check_no_sessions(config):
                    if isinstance(s, dict) and s.get("status") == "running"]
 
         if running:
-            names = [s.get("agent", "unknown") for s in running]
+            names = [s.get("agent_name", s.get("agent", "unknown")) for s in running]
             return False, f"Running: {', '.join(names)}"
         return True, None
     except Exception as e:
